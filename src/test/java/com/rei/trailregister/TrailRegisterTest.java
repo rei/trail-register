@@ -1,6 +1,7 @@
 package com.rei.trailregister;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -50,8 +51,12 @@ public class TrailRegisterTest {
         assertEquals(201, post("/test-app/prod/things/7", ""));
         assertEquals(201, post("/test-app/prod/things", ImmutableMap.of("7", 7, "75", 102)));
         assertEquals(201, post("/test-app/prod/other", ImmutableMap.of("x", 1, "y", 12)));
+        
         assertEquals(201, post("/other-app/test/other/x", ""));
         assertEquals(201, post("/other-app/prod/other/x", ""));
+        
+        assertEquals(201, post("/other-app/prod", ImmutableMap.of("cats", ImmutableMap.of("ninja", 7, "bandit", 102), 
+                                                                  "dogs", ImmutableMap.of("dexter", 35, "spot", 1))));
         
         List<String> apps = get("/", new TypeToken<List<String>>(){});
         assertEquivalant(Arrays.asList("test-app", "other-app"), apps);
@@ -60,12 +65,20 @@ public class TrailRegisterTest {
         assertEquivalant(Arrays.asList("test", "prod"), envs);
         
         List<String> categories = get("/test-app/prod", new TypeToken<List<String>>(){});
-        assertEquivalant(Arrays.asList("thing", "other"), categories);
+        assertEquivalant(Arrays.asList("things", "other"), categories);
+        
+        categories = get("/other-app/prod", new TypeToken<List<String>>(){});
+        assertEquivalant(Arrays.asList("other", "cats", "dogs"), categories);
         
         Map<String, Integer> usages = get("/test-app/prod/things", new TypeToken<Map<String, Integer>>(){});
         System.out.println(usages);
         assertEquals(3, usages.size());
         assertEquals(8, (int) usages.get("7")); 
+        
+        usages = get("/other-app/prod/cats", new TypeToken<Map<String, Integer>>(){});
+        System.out.println(usages);
+        assertEquals(2, usages.size());
+        assertEquals(102, (int) usages.get("bandit"));
     }
 
     @After
@@ -76,7 +89,7 @@ public class TrailRegisterTest {
     private void assertEquivalant(List<?> expected, List<?> actual) {
         System.out.println(actual);
         assertEquals(expected.size(), actual.size());
-        expected.forEach(actual::contains);
+        expected.forEach(e -> assertTrue("should contain '" + e + "'", actual.contains(e)));
     }
     
     private Integer findRandomOpenPort() throws IOException {
