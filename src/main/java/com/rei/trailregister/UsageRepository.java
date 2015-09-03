@@ -39,6 +39,10 @@ public class UsageRepository {
 		recordUsages(app, env, category, key, 1, LocalDate.now());
 	}
 	
+	public void recordUsages(String app, String env, String category, String key, int num) {
+        recordUsages(app, env, category, key, num, LocalDate.now());
+    }
+	
 	public void recordUsages(String app, String env, String category, String key, LocalDate date) {
 		recordUsages(app, env, category, key, 1, date);
 	}
