@@ -10,19 +10,33 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.diffplug.common.base.DurianPlugins;
+import com.diffplug.common.base.Errors;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import spark.Request;
 
 public class TrailRegister {
+    private static Logger logger = LoggerFactory.getLogger(TrailRegister.class);
     
     public static void main(String[] args) throws IOException {
+        DurianPlugins.register(Errors.Plugins.Log.class, error -> {
+            logger.error("error!", error);
+        });
+        
         new TrailRegister(Paths.get(Optional.ofNullable(System.getenv("DATA_DIR")).orElse("/trail-register-data"))).run();
     }
     
+    private ScheduledExecutorService compactionExec = Executors.newScheduledThreadPool(1);
     private Gson json = new Gson();
     private UsageRepository repo;
 
@@ -32,6 +46,7 @@ public class TrailRegister {
         }
         
         repo = new UsageRepository(dataDir);
+        compactionExec.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
     }
     
     public void run() {
