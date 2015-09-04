@@ -63,7 +63,10 @@ public class TrailRegister {
         }, json::toJson);
         
         get("/:app/:env/:cat/:key", (req, res) -> 
-            repo.getUsages(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key"), days(req)), 
+            Optional.ofNullable(req.queryParams("by_date")).map(p -> p.equals("true")).orElse(false)  
+                    ? repo.getUsagesByDate(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key"), days(req)) 
+                    : repo.getUsages(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key"), days(req)),
+                    
             json::toJson);
         
         post("/:app/:env", (req, res) -> {

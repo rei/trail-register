@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -113,6 +114,16 @@ public class UsageRepository {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
+	    Map<String, Integer> compactedData = readCompactedFile(app, env, category, key);
+        
+        LocalDate now = LocalDate.now();
+        return new TreeMap<>(IntStream.range(0, days)
+                                      .mapToObj(delta -> now.minusDays(delta))
+                                      .collect(toMap(BASIC_ISO_DATE::format, 
+                                                     date -> getUsages(app, env, category, key, date, compactedData))));
 	}
 	
 	public int getUsages(String app, String env, String category, String key, int days) {

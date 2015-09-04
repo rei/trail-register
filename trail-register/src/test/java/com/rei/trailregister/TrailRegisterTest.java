@@ -79,6 +79,10 @@ public class TrailRegisterTest {
         System.out.println(usages);
         assertEquals(2, usages.size());
         assertEquals(102, (int) usages.get("bandit"));
+        
+        usages = get("/other-app/prod/cats/bandit?by_date=true&days=7", new TypeToken<Map<String, Integer>>(){});
+        System.out.println(usages);
+        assertEquals(7, usages.size());
     }
 
     @After

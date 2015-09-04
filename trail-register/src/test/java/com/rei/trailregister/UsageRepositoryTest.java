@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.junit.Rule;
@@ -45,6 +46,10 @@ public class UsageRepositoryTest {
 		repo.recordUsages("app", "env", "tests", "read_write");
 		repo.recordUsages("app", "env", "tests", "read_write", 2, LocalDate.now().minusDays(2));
 		assertEquals(379, repo.getUsages("app", "env", "tests", "read_write", 366));
+		
+		Map<String, Integer> usagesByDate = repo.getUsagesByDate("app", "env", "tests", "read_write", 366);
+        System.out.println(usagesByDate);
+        assertEquals(366, usagesByDate.size());
 		
 	}
 
