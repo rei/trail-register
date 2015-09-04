@@ -1,6 +1,7 @@
 package com.rei.trailregister.client;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -9,15 +10,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.rei.trailregister.TrailRegister;
-import com.rei.trailregister.UsageRepository;
 
 import spark.Spark;
 
@@ -29,7 +31,6 @@ public class BatchingTrailRegisterClientTest {
 	private int port;
     private String baseUrl;
 
-    private UsageRepository backingRepo;
     
     @Before
     public void setup() throws IOException {
@@ -37,24 +38,33 @@ public class BatchingTrailRegisterClientTest {
         baseUrl = "http://localhost:" + port;
         Spark.port(port);
         new TrailRegister(tmp.getRoot().toPath()).run();
-        backingRepo = new UsageRepository(tmp.getRoot().toPath());
         Spark.awaitInitialization();
+    }
+    
+    @After
+    public void cleanup() {
+        Spark.stop();
     }
 	
 	@Test
 	public void canSendUsageData() throws InterruptedException, IOException {
-		BatchingTrailRegisterClient client = new BatchingTrailRegisterClient(baseUrl, "test-app", "prod", 100, TimeUnit.MILLISECONDS);
+		BatchingTrailRegisterClient client = new BatchingTrailRegisterClient(baseUrl, 100, TimeUnit.MILLISECONDS);
 		
 		for (int i = 0; i < 1000; i++) {
-			client.recordUsage("things", "thing" + i % 4);
+			client.recordUsage("test-app", "prod", "things", "thing" + i % 4);
 		}
 		
 		Thread.sleep(500);
 		
 		listFiles(tmp.getRoot().toPath());
 		
-		int usages = backingRepo.getUsages("test-app", "prod", "things", "thing0", 1);
+		int usages = client.getUsages("test-app", "prod", "things", "thing0");
 		assertEquals(250, usages);
+		
+		Map<String, Integer> usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0");
+		System.out.println(usagesByDate);
+        assertTrue(usagesByDate.size() > 0); 
+        assertEquals(250, (int) usagesByDate.values().stream().reduce(Integer::sum).orElse(0));
 	}
 	
     private Integer findRandomOpenPort() throws IOException {
