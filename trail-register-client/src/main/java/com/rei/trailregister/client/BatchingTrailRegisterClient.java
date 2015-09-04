@@ -20,7 +20,9 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 
 public class BatchingTrailRegisterClient implements TrailRegisterClient {
-	private static Logger logger = LoggerFactory.getLogger(BatchingTrailRegisterClient.class);
+	public static final int DEFAULT_DAYS = 30;
+
+    private static Logger logger = LoggerFactory.getLogger(BatchingTrailRegisterClient.class);
 	
 	public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	
@@ -47,20 +49,35 @@ public class BatchingTrailRegisterClient implements TrailRegisterClient {
 		    .compute(category, (k, v) -> v == null ? new ConcurrentHashMap<>() : v)
 			.compute(key, (k, v) -> v == null ? 1 : v + 1);
 	}
-	
+
 	@Override
     public int getUsages(String app, String env, String category, String key) {
-        return get(path(app, env, category, key), new TypeToken<Integer>(){});
+        return getUsages(app, env, category, key, DEFAULT_DAYS);
     }
 
-    @Override
-    public Map<String, Integer> getAllUsages(String app, String env, String category) {
-        return get(path(app, env, category), new TypeToken<Map<String, Integer>>(){});
-    }
-
+	@Override
+	public Map<String, Integer> getAllUsages(String app, String env, String category) {
+	    return getAllUsages(app, env, category, DEFAULT_DAYS);
+	}
+	
     @Override
     public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key) {
-        return get(path(app, env, category, key + "?by_date=true"), new TypeToken<Map<String, Integer>>(){});
+        return getUsagesByDate(app, env, category, key, DEFAULT_DAYS);
+    }
+	
+	@Override
+    public int getUsages(String app, String env, String category, String key, int days) {
+        return get(path(app, env, category, key) + "?days=" + days, new TypeToken<Integer>(){});
+    }
+
+    @Override
+    public Map<String, Integer> getAllUsages(String app, String env, String category, int days) {
+        return get(path(app, env, category) + "?days=" + days, new TypeToken<Map<String, Integer>>(){});
+    }
+
+    @Override
+    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
+        return get(path(app, env, category, key + "?by_date=true&days=" + days), new TypeToken<Map<String, Integer>>(){});
     }
 
 	private void sendBatch() {

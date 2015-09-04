@@ -1,7 +1,6 @@
 package com.rei.trailregister.client;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -61,10 +60,16 @@ public class BatchingTrailRegisterClientTest {
 		int usages = client.getUsages("test-app", "prod", "things", "thing0");
 		assertEquals(250, usages);
 		
+		usages = client.getUsages("test-app", "prod", "things", "thing0", 1);
+        assertEquals(250, usages);
+		
 		Map<String, Integer> usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0");
 		System.out.println(usagesByDate);
-        assertTrue(usagesByDate.size() > 0); 
+        assertEquals(BatchingTrailRegisterClient.DEFAULT_DAYS, usagesByDate.size()); 
         assertEquals(250, (int) usagesByDate.values().stream().reduce(Integer::sum).orElse(0));
+        
+        usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0", 10);
+        assertEquals(10, usagesByDate.size()); 
 	}
 	
     private Integer findRandomOpenPort() throws IOException {
