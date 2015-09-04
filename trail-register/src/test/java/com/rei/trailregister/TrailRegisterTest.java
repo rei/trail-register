@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -41,10 +42,10 @@ public class TrailRegisterTest {
         port = findRandomOpenPort();
         baseUrl = "http://localhost:" + port;
         Spark.port(port);
-        new TrailRegister(tmp.getRoot().toPath()).run();
+        new TrailRegister(tmp.getRoot().toPath(), Collections.emptyList()).run();
         Spark.awaitInitialization();
     }
-
+    
     @Test
     public void integrationTest() throws IOException {
         assertEquals(201, post("/test-app/prod/things/1", ""));

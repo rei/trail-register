@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +37,7 @@ public class BatchingTrailRegisterClientTest {
         port = findRandomOpenPort();
         baseUrl = "http://localhost:" + port;
         Spark.port(port);
-        new TrailRegister(tmp.getRoot().toPath()).run();
+        new TrailRegister(tmp.getRoot().toPath(), Collections.emptyList()).run();
         Spark.awaitInitialization();
     }
     
@@ -65,7 +66,7 @@ public class BatchingTrailRegisterClientTest {
 		
 		Map<String, Integer> usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0");
 		System.out.println(usagesByDate);
-        assertEquals(BatchingTrailRegisterClient.DEFAULT_DAYS, usagesByDate.size()); 
+        assertEquals(AbstractTrailRegisterClient.DEFAULT_DAYS, usagesByDate.size()); 
         assertEquals(250, (int) usagesByDate.values().stream().reduce(Integer::sum).orElse(0));
         
         usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0", 10);

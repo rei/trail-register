@@ -32,11 +32,5 @@
 			<groupId>com.squareup.okhttp</groupId>
 			<artifactId>okhttp</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>${project.parent.groupId}</groupId>
-			<artifactId>trail-register</artifactId>
-			<version>${project.parent.version}</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 </project>

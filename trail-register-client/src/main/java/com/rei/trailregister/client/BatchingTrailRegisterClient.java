@@ -1,43 +1,20 @@
 package com.rei.trailregister.client;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-
-public class BatchingTrailRegisterClient implements TrailRegisterClient {
-	public static final int DEFAULT_DAYS = 30;
-
-    private static Logger logger = LoggerFactory.getLogger(BatchingTrailRegisterClient.class);
-	
-	public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-	
-	private Gson json = new Gson();
-    private OkHttpClient client = new OkHttpClient();
-	private String baseUrl;
-	
-	// yes, holy crap
+public class BatchingTrailRegisterClient extends AbstractTrailRegisterClient {
+	// yes, holy crap, 3 levels...
 	private ConcurrentMap<String, ConcurrentMap<String, ConcurrentMap<String, Integer>>> data = new ConcurrentHashMap<>();
-	
 
 	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 	
 	public BatchingTrailRegisterClient(String baseUrl, long interval, TimeUnit unit) {
-		this.baseUrl = baseUrl;
+		super(baseUrl);
 		executor.scheduleWithFixedDelay(this::sendBatch, interval, interval, unit);
 	}
 	
@@ -49,36 +26,6 @@ public class BatchingTrailRegisterClient implements TrailRegisterClient {
 		    .compute(category, (k, v) -> v == null ? new ConcurrentHashMap<>() : v)
 			.compute(key, (k, v) -> v == null ? 1 : v + 1);
 	}
-
-	@Override
-    public int getUsages(String app, String env, String category, String key) {
-        return getUsages(app, env, category, key, DEFAULT_DAYS);
-    }
-
-	@Override
-	public Map<String, Integer> getAllUsages(String app, String env, String category) {
-	    return getAllUsages(app, env, category, DEFAULT_DAYS);
-	}
-	
-    @Override
-    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key) {
-        return getUsagesByDate(app, env, category, key, DEFAULT_DAYS);
-    }
-	
-	@Override
-    public int getUsages(String app, String env, String category, String key, int days) {
-        return get(path(app, env, category, key) + "?days=" + days, new TypeToken<Integer>(){});
-    }
-
-    @Override
-    public Map<String, Integer> getAllUsages(String app, String env, String category, int days) {
-        return get(path(app, env, category) + "?days=" + days, new TypeToken<Map<String, Integer>>(){});
-    }
-
-    @Override
-    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
-        return get(path(app, env, category, key + "?by_date=true&days=" + days), new TypeToken<Map<String, Integer>>(){});
-    }
 
 	private void sendBatch() {
 	    data.forEach((appEnv, appEnvData) -> {
@@ -97,27 +44,5 @@ public class BatchingTrailRegisterClient implements TrailRegisterClient {
 	            logger.warn("failed to send usage data", e);
 	        }
 	    });
-	}
-	
-	int post(String app, String env, Object body) throws IOException {
-        Request request = new Request.Builder()
-                .url(baseUrl + "/" + app + "/" + env)
-                .post(RequestBody.create(JSON, json.toJson(body)))
-                .build();
-
-        return client.newCall(request).execute().code();
-    }
-	
-	<T> T get(String path, TypeToken<T> type) {
-	    try {
-    	    Request request = new Request.Builder().url(baseUrl + path).get().build();
-    	    return json.fromJson(client.newCall(request).execute().body().string(), type.getType());
-	    } catch (IOException e) {
-            throw new RuntimeException("unable to get usage data!", e);
-        }
-    }
-	
-	private static String path(String... segments) {
-	    return "/" + String.join("/", Arrays.asList(segments));
 	}
 }

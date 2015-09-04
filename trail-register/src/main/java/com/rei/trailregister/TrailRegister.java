@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -20,12 +21,15 @@ import org.slf4j.LoggerFactory;
 
 import com.diffplug.common.base.DurianPlugins;
 import com.diffplug.common.base.Errors;
+import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import spark.Request;
 
 public class TrailRegister {
+    private static final String DATA_DIR_VAR = "DATA_DIR";
+    
     private static Logger logger = LoggerFactory.getLogger(TrailRegister.class);
     
     public static void main(String[] args) throws IOException {
@@ -33,19 +37,20 @@ public class TrailRegister {
             logger.error("error!", error);
         });
         
-        new TrailRegister(Paths.get(Optional.ofNullable(System.getenv("DATA_DIR")).orElse("/trail-register-data"))).run();
+        new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
+                          ClusterUtils.parseHostAndPorts(System.getenv())).run();
     }
     
     private ScheduledExecutorService compactionExec = Executors.newScheduledThreadPool(1);
     private Gson json = new Gson();
     private UsageRepository repo;
 
-    public TrailRegister(Path dataDir) throws IOException {
+    public TrailRegister(Path dataDir, List<HostAndPort> peers) throws IOException {
         if (!Files.exists(dataDir)) {
             Files.createDirectories(dataDir);
         }
         
-        repo = new UsageRepository(dataDir);
+        repo = peers.isEmpty() ? new UsageRepository(dataDir) : new ClusteredUsageRepository(dataDir, peers);
         compactionExec.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
     }
     
@@ -94,6 +99,8 @@ public class TrailRegister {
             res.status(201);
             return "";
         }, json::toJson);
+        
+        get("/_ping", (req, res) -> ClusterUtils.localhost );
     }
 
     private <T> T parseJson(Request req, TypeToken<T> typeToken) {
