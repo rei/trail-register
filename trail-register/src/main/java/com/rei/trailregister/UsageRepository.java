@@ -82,7 +82,7 @@ public class UsageRepository {
         			} else {
         				count[0] = readDataFile(dateFile);
         			}
-        			Files.write(dateFile, new byte[] { (byte) (count[0]+num) });
+        			Files.write(dateFile, String.valueOf(count[0]+num).getBytes());
     		}));
 		});
 	}
@@ -204,7 +204,7 @@ public class UsageRepository {
     
     private int readDataFile(Path dateFile) {
         try {
-            return Files.readAllBytes(dateFile)[0];
+            return Integer.parseInt(new String(Files.readAllBytes(dateFile)));
         } catch (IOException e) {
             logger.error("failed to read data file", e);
             throw new RuntimeException(e);
