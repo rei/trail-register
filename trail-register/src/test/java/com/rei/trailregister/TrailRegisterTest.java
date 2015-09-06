@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.After;
 import org.junit.Before;
@@ -17,6 +18,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.MediaType;
@@ -42,7 +44,7 @@ public class TrailRegisterTest {
         port = findRandomOpenPort();
         baseUrl = "http://localhost:" + port;
         Spark.port(port);
-        new TrailRegister(tmp.getRoot().toPath(), Collections.emptyList()).run();
+        new TrailRegister(tmp.newFolder("main").toPath(), Collections.emptyList()).run();
         Spark.awaitInitialization();
     }
     
@@ -86,6 +88,17 @@ public class TrailRegisterTest {
         assertEquals(7, usages.size());
     }
 
+    @Test
+    public void clusteringTest() throws IOException, InterruptedException {
+    	List<HostAndPort> peers = Arrays.asList(HostAndPort.fromParts("localhost", port));
+		ClusteredUsageRepository clusteredRepos = new ClusteredUsageRepository(tmp.newFolder("other").toPath(), UUID.randomUUID(), peers);
+		assertEquals(201, post("/test-app/prod/things/x", ""));
+		
+		clusteredRepos.recordUsages("test-app", "prod", "things", "x");
+		int usages = clusteredRepos.getUsages("test-app", "prod", "things", "x", 1);
+		assertEquals(2, usages);
+    }
+    
     @After
     public void cleanup() {
         Spark.stop();

@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -44,17 +45,21 @@ public class TrailRegister {
     private ScheduledExecutorService compactionExec = Executors.newScheduledThreadPool(1);
     private Gson json = new Gson();
     private UsageRepository repo;
+    private UUID id;
 
     public TrailRegister(Path dataDir, List<HostAndPort> peers) throws IOException {
         if (!Files.exists(dataDir)) {
             Files.createDirectories(dataDir);
         }
         
-        repo = peers.isEmpty() ? new UsageRepository(dataDir) : new ClusteredUsageRepository(dataDir, peers);
+        id = UUID.randomUUID();
+        repo = peers.isEmpty() ? new UsageRepository(dataDir) : new ClusteredUsageRepository(dataDir, id, peers);
         compactionExec.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
     }
     
     public void run() {
+    	get("/_ping", (req, res) -> id.toString() );
+    	
     	before("/*", "application/json", (req, res) -> res.header("Content-Type", "application/json"));
         
     	get("/", (req, res) -> repo.getApps(), json::toJson);
@@ -100,7 +105,6 @@ public class TrailRegister {
             return "";
         }, json::toJson);
         
-        get("/_ping", (req, res) -> ClusterUtils.localhost );
     }
 
     private <T> T parseJson(Request req, TypeToken<T> typeToken) {
