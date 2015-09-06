@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,7 +107,11 @@ public class UsageRepository {
 	
 	private List<String> list(String... parts) {
 		try {
-			return Files.list(Paths.get(basedir.toString(), parts))
+			Path path = Paths.get(basedir.toString(), parts);
+			if (!Files.exists(path)) {
+				return Collections.emptyList();
+			}
+			return Files.list(path)
 					.filter(Files::isDirectory)
 					.map(Path::getFileName)
 					.map(Path::toString)
@@ -139,7 +144,7 @@ public class UsageRepository {
 	    return getUsages(app, env, category, key, date, readCompactedFile(app, env, category, key));
 	}
 	
-	private int getUsages(String app, String env, String category, String key, LocalDate date, Map<String, Integer> compactedData) {
+	protected int getUsages(String app, String env, String category, String key, LocalDate date, Map<String, Integer> compactedData) {
 		checkNotNull(app);
 		checkNotNull(env);
 		checkNotNull(category);

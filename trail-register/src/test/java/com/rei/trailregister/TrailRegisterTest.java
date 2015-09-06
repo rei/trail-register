@@ -61,6 +61,9 @@ public class TrailRegisterTest {
         assertEquals(201, post("/other-app/prod", ImmutableMap.of("cats", ImmutableMap.of("ninja", 7, "bandit", 102), 
                                                                   "dogs", ImmutableMap.of("dexter", 35, "spot", 1))));
         
+        String health = get("/health", new TypeToken<String>(){});
+        assertEquals("UP", health);
+        
         List<String> apps = get("/", new TypeToken<List<String>>(){});
         assertEquivalant(Arrays.asList("test-app", "other-app"), apps);
         
@@ -92,11 +95,19 @@ public class TrailRegisterTest {
     public void clusteringTest() throws IOException, InterruptedException {
     	List<HostAndPort> peers = Arrays.asList(HostAndPort.fromParts("localhost", port));
 		ClusteredUsageRepository clusteredRepos = new ClusteredUsageRepository(tmp.newFolder("other").toPath(), UUID.randomUUID(), peers);
-		assertEquals(201, post("/test-app/prod/things/x", ""));
+		
+		for (int i = 0; i < 20; i++) {
+			assertEquals(201, post("/test-app/prod/things/x", ""));
+		}
 		
 		clusteredRepos.recordUsages("test-app", "prod", "things", "x");
-		int usages = clusteredRepos.getUsages("test-app", "prod", "things", "x", 1);
-		assertEquals(2, usages);
+		
+		for (int i = 0; i < 20; i++) {
+			int usages = clusteredRepos.getUsages("test-app", "prod", "things", "x", 1);
+			assertEquals(21, usages);
+		}
+		
+		get("/_stats", new TypeToken<List<Map<String, Object>>>(){}).forEach(System.out::println);;
     }
     
     @After
