@@ -33,6 +33,8 @@ import spark.Spark;
 
 public class TrailRegister {
 	private static final String DATA_DIR_VAR = "DATA_DIR";
+
+    private static final String PORT = "PORT";
     
     private static Logger logger = LoggerFactory.getLogger(TrailRegister.class);
     
@@ -40,6 +42,8 @@ public class TrailRegister {
         DurianPlugins.register(Errors.Plugins.Log.class, error -> {
             logger.error("error!", error);
         });
+        
+        Optional.ofNullable(System.getenv(PORT)).map(Integer::parseInt).ifPresent(p -> Spark.port(p));
         
         new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
                           ClusterUtils.parseHostAndPorts(System.getenv())).run();
