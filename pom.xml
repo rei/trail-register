@@ -138,9 +138,9 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git@github.com:jeffskj/phonydata.git</connection>
-		<developerConnection>scm:git:git@github.com:jeffskj/phonydata.git</developerConnection>
-		<url>git@github.com:jeffskj/phonydata.git</url>
+		<connection>scm:git:git@github.com:jskjons/trail-register.git</connection>
+		<developerConnection>scm:git:git@github.com:jskjons/trail-register.git</developerConnection>
+		<url>git@github.com:jskjons/trail-register.git</url>
 	</scm>
-
+	
 </project>
