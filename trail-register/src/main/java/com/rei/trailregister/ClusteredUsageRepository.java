@@ -1,6 +1,6 @@
 package com.rei.trailregister;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.net.HostAndPort;
-import com.rei.trailregister.client.DirectTrailRegisterClient;
 import com.rei.trailregister.client.TrailRegisterClient;
 
 public class ClusteredUsageRepository extends UsageRepository {
@@ -37,21 +36,28 @@ public class ClusteredUsageRepository extends UsageRepository {
     }
     
     @Override
-    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
+    public Map<String, Integer> getUsagesByDate(GetUsagesRequest req) {
     	awaitInitialization();
-        Map<String, Integer> localResult = super.getUsagesByDate(app, env, category, key, days);
-        availablePeers.parallelStream().forEach(peer -> localResult.putAll(peer.client.getUsagesByDate(app, env, category, key)));
+        Map<String, Integer> localResult = super.getUsagesByDate(req);
+        if (!req.fromPeer) {
+            availablePeers.parallelStream().forEach(peer -> 
+                localResult.putAll(peer.client.getUsagesByDate(req.app, req.env, req.category, req.key)));
+        }
         return localResult;
     }
 
     
     @Override
-    public int getUsages(String app, String env, String category, String key, int days) {
+    public int getUsages(GetUsagesRequest req) {
     	awaitInitialization();
-        int localResult = super.getUsages(app, env, category, key, days);
-        return localResult + availablePeers.parallelStream()
-                                           .mapToInt(peer -> peer.client.getUsages(app, env, category, key, days))
-                                           .sum();
+        int localResult = super.getUsages(req);
+        return localResult + (!req.fromPeer ? getUsagesFromPeers(req) : 0);
+    }
+
+    private int getUsagesFromPeers(GetUsagesRequest req) {
+        return availablePeers.parallelStream()
+                              .mapToInt(peer -> peer.client.getUsages(req.app, req.env, req.category, req.key, req.days))
+                              .sum();
     }
     
     void checkAvailability() {
@@ -78,7 +84,7 @@ public class ClusteredUsageRepository extends UsageRepository {
     	
     	public Peer(HostAndPort host) {
     		this.host = host;
-    		client = new DirectTrailRegisterClient(getBaseUrl()); 
+    		client = new ClusterAwareTrailRegisterClient(getBaseUrl()); 
 		}
     	
     	boolean isAvailable() {

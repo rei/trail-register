@@ -125,26 +125,26 @@ public class UsageRepository {
 		}
 	}
 	
-	public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
-	    Map<String, Integer> compactedData = readCompactedFile(app, env, category, key);
+	public Map<String, Integer> getUsagesByDate(GetUsagesRequest req) {
+	    Map<String, Integer> compactedData = readCompactedFile(req.app, req.env, req.category, req.key);
         
         LocalDate now = LocalDate.now();
-        return new TreeMap<>(IntStream.range(0, days)
+        return new TreeMap<>(IntStream.range(0, req.days)
                                       .mapToObj(delta -> now.minusDays(delta))
                                       .collect(toMap(BASIC_ISO_DATE::format, 
-                                                     date -> getUsages(app, env, category, key, date, compactedData))));
+                                                     date -> getUsages(req.app, req.env, req.category, req.key, date, compactedData))));
 	}
 	
-	public int getUsages(String app, String env, String category, String key, int days) {
-	    Map<String, Integer> compactedData = readCompactedFile(app, env, category, key);
+	public int getUsages(GetUsagesRequest req) {
+	    Map<String, Integer> compactedData = readCompactedFile(req.app, req.env, req.category, req.key);
 	    
 		LocalDate now = LocalDate.now();
-		return IntStream.range(0, days)
-						.map(delta -> getUsages(app, env, category, key, now.minusDays(delta), compactedData))
+		return IntStream.range(0, req.days)
+						.map(delta -> getUsages(req.app, req.env, req.category, req.key, now.minusDays(delta), compactedData))
 						.sum();		
 	}
 	
-	public int getUsages(String app, String env, String category, String key, LocalDate date) {
+	int getUsages(String app, String env, String category, String key, LocalDate date) {
 	    return getUsages(app, env, category, key, date, readCompactedFile(app, env, category, key));
 	}
 	

@@ -103,9 +103,11 @@ public class TrailRegisterTest {
 		clusteredRepos.recordUsages("test-app", "prod", "things", "x");
 		
 		for (int i = 0; i < 20; i++) {
-			int usages = clusteredRepos.getUsages("test-app", "prod", "things", "x", 1);
+			int usages = clusteredRepos.getUsages(new GetUsagesRequest("test-app", "prod", "things", "x", 1, false));
 			assertEquals(21, usages);
 		}
+		
+		assertEquals(1, clusteredRepos.getUsages(new GetUsagesRequest("test-app", "prod", "things", "x", 1, true)));
 		
 		get("/_stats", new TypeToken<List<Map<String, Object>>>(){}).forEach(System.out::println);;
     }

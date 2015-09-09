@@ -13,6 +13,7 @@ import com.google.gson.reflect.TypeToken;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Request.Builder;
 import com.squareup.okhttp.RequestBody;
 
 abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
@@ -99,8 +100,8 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
 
     protected <T> T get(String path, TypeToken<T> type) {
         try {
-    	    Request request = new Request.Builder().url(baseUrl + path).get().build();
-    	    return json.fromJson(client.newCall(request).execute().body().string(), type.getType());
+    	    Builder request = new Request.Builder().url(baseUrl + path).get();
+    	    return json.fromJson(client.newCall(request.build()).execute().body().string(), type.getType());
         } catch (IOException e) {
             throw new RuntimeException("unable to get usage data!", e);
         }
@@ -109,5 +110,6 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     static String path(String... segments) {
         return "/" + String.join("/", Arrays.asList(segments));
     }
-
+    
+    protected void modifyRequest(Builder b) {}
 }
