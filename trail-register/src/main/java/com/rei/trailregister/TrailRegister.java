@@ -4,12 +4,14 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -35,6 +37,8 @@ public class TrailRegister {
 	private static final String DATA_DIR_VAR = "DATA_DIR";
 
     private static final String PORT = "PORT";
+
+    private static final String POM_PROPS = "META-INF/maven/com.rei.stats/trail-register/pom.properties";
     
     private static Logger logger = LoggerFactory.getLogger(TrailRegister.class);
     
@@ -77,7 +81,10 @@ public class TrailRegister {
     								"avg", elapsedTime.get(r).get() / invocationCount);
     		}).collect(toList())
 		);
+    	
     	get("/health", (req, res) -> repo.getApps() != null ? "UP" : "DOWN");
+    	
+    	get("/version", (req, res) -> readVersionInfo());
     	
     	get("/", (req, res) -> repo.getApps());
         get("/:app", (req, res) -> repo.getEnvironments(req.params(":app")));
@@ -153,5 +160,20 @@ public class TrailRegister {
 			
 			return result;
 		};
+	}
+	
+	private static Properties readVersionInfo() {
+	    InputStream in = ClassLoader.getSystemClassLoader().getResourceAsStream(POM_PROPS);
+	    if (in == null) {
+	        return new Properties();
+	    }
+	    Properties props = new Properties();
+	    try {
+            props.load(in);
+        } catch (IOException e) {
+            logger.warn("error reading pom properties", e);
+            return new Properties();
+        }
+	    return props;
 	}
 }
