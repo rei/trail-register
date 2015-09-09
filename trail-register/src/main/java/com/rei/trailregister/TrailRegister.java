@@ -2,6 +2,7 @@ package com.rei.trailregister;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static spark.Spark.exception;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,6 +72,11 @@ public class TrailRegister {
     }
     
     public void run() {
+        exception(IllegalArgumentException.class, (e, request, response) -> {
+            response.status(400);
+            response.body(e.getMessage());
+        });
+        
     	get("/_ping", (req, res) -> id.toString() );
     	get("/_stats", (req, res) -> elapsedTime.keySet().stream().map(r -> {
 			long invocationCount = invocations.get(r).get();

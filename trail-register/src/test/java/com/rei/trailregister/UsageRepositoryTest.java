@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -21,9 +22,15 @@ public class UsageRepositoryTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 	
+	private UsageRepository repo;
+	
+	@Before 
+	public void setup() {
+	    repo = new UsageRepository(tmp.getRoot().toPath());
+	}
+	
 	@Test
 	public void canReadAndWriteUsages() throws IOException {
-		UsageRepository repo = new UsageRepository(tmp.getRoot().toPath());
 		repo.recordUsages("app", "env", "tests", "read_write", 5, LocalDate.now());
 		repo.recordUsages("app", "env", "tests", "read_write");
 		repo.recordUsages("app", "env", "tests", "read_write", LocalDate.now().minusDays(1));
@@ -53,6 +60,27 @@ public class UsageRepositoryTest {
 		
 	}
 
+	@Test(expected=IllegalArgumentException.class)
+	public void requiresNonNullArgs() {
+	    repo.getEnvironments(null);
+	}
+	
+	@Test(expected=IllegalArgumentException.class)
+    public void requiresSafeArgs() {
+        repo.recordUsages("blah", "blah", "blah", "<invalid");
+    }
+	
+	@Test(expected=IllegalArgumentException.class)
+    public void requiresNonNavigationalArgs() {
+        repo.recordUsages("blah", "blah", "blah", "..");
+    }
+	
+	@Test(expected=IllegalArgumentException.class)
+    public void requiresNonNavigationalArgsToList() {
+        repo.getEnvironments("..");
+    }
+    
+	
 	void listFiles(Path path) throws IOException {
 	    Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 	        @Override

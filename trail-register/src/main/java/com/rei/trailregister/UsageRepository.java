@@ -28,12 +28,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.diffplug.common.base.Errors;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 public class UsageRepository {
-    
+    private static final String INVALID_CHARS = ":*?\"<>|/\\";
     private static final int MIN_COMPACTION_SIZE = 100;
     private static Logger logger = LoggerFactory.getLogger(UsageRepository.class);
 	private static final String COMPACTED_FILE = "_data";
@@ -68,10 +70,10 @@ public class UsageRepository {
 	}
 	
 	public void recordUsages(String app, String env, String category, String key, int num, LocalDate date) {
-		checkNotNull(app);
-		checkNotNull(env);
-		checkNotNull(category);
-		checkNotNull(key);
+		checkArgument("app", app);
+		checkArgument("env", env);
+		checkArgument("category", category);
+		checkArgument("key", key);
 		
 		int[] count = new int[] {0};
 		
@@ -108,6 +110,8 @@ public class UsageRepository {
 	private List<String> list(String... parts) {
 		try {
 			Path path = Paths.get(basedir.toString(), parts);
+			Preconditions.checkArgument(!path.toString().contains(".."), "may not contain '..' or '.'!");
+			
 			if (!Files.exists(path)) {
 				return Collections.emptyList();
 			}
@@ -145,10 +149,10 @@ public class UsageRepository {
 	}
 	
 	protected int getUsages(String app, String env, String category, String key, LocalDate date, Map<String, Integer> compactedData) {
-		checkNotNull(app);
-		checkNotNull(env);
-		checkNotNull(category);
-		checkNotNull(key);
+		checkArgument("app", app);
+		checkArgument("env", env);
+		checkArgument("category", category);
+		checkArgument("key", key);
 		checkNotNull(date);
 		
 		String dateString = BASIC_ISO_DATE.format(date);
@@ -254,5 +258,11 @@ public class UsageRepository {
         } finally {
             lock.unlock();
         }
+    }
+    
+    private void checkArgument(String name, String value) {
+        Preconditions.checkArgument(value != null, "{0} may not be null", name);
+        Preconditions.checkArgument(CharMatcher.anyOf(INVALID_CHARS).matchesNoneOf(value), "%s may not contain %s", name, INVALID_CHARS);
+        Preconditions.checkArgument(!value.equals("..") && !value.equals("."), "%s must not equal '..' or '.'", name);
     }
 }
