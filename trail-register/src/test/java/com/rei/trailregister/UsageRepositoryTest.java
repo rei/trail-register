@@ -62,7 +62,7 @@ public class UsageRepositoryTest {
 
 	@Test(expected=IllegalArgumentException.class)
 	public void requiresNonNullArgs() {
-	    repo.getEnvironments(null);
+	    repo.recordUsages(null, "blah", "blah", "<invalid");
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
