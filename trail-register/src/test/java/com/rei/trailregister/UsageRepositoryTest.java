@@ -36,7 +36,7 @@ public class UsageRepositoryTest {
 		repo.recordUsages("app", "env", "tests", "read_write", LocalDate.now().minusDays(1));
 		repo.recordUsages("app", "env", "tests", "read_write", 4, LocalDate.now().minusDays(2));
 		
-		assertEquals(6, repo.getUsages("app", "env", "tests", "read_write", LocalDate.now()));
+		assertEquals(6, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 1, false)));
 		
 		assertEquals(11, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 3, false)));
 		

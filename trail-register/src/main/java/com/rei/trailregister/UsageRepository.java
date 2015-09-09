@@ -144,10 +144,6 @@ public class UsageRepository {
 						.sum();		
 	}
 	
-	int getUsages(String app, String env, String category, String key, LocalDate date) {
-	    return getUsages(app, env, category, key, date, readCompactedFile(app, env, category, key));
-	}
-	
 	protected int getUsages(String app, String env, String category, String key, LocalDate date, Map<String, Integer> compactedData) {
 		checkArgument("app", app);
 		checkArgument("env", env);
