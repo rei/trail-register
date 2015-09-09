@@ -101,6 +101,7 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     protected <T> T get(String path, TypeToken<T> type) {
         try {
     	    Builder request = new Request.Builder().url(baseUrl + path).get();
+    	    modifyRequest(request);
     	    return json.fromJson(client.newCall(request.build()).execute().body().string(), type.getType());
         } catch (IOException e) {
             throw new RuntimeException("unable to get usage data!", e);
