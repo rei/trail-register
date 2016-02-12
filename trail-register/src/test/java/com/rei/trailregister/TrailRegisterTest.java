@@ -89,25 +89,29 @@ public class TrailRegisterTest {
         usages = get("/other-app/prod/cats/bandit?by_date=true&days=7", new TypeToken<Map<String, Integer>>(){});
         System.out.println(usages);
         assertEquals(7, usages.size());
+        
+        Integer usageNum = get("/other-app/prod/cats/bandit", new TypeToken<Integer>(){});
+        System.out.println(usageNum);
+        assertEquals(102, (int) usageNum);
     }
 
     @Test
     public void clusteringTest() throws IOException, InterruptedException {
     	List<HostAndPort> peers = Arrays.asList(HostAndPort.fromParts("localhost", port));
-		ClusteredUsageRepository clusteredRepos = new ClusteredUsageRepository(tmp.newFolder("other").toPath(), UUID.randomUUID(), peers);
+		ClusteredFileUsageRepository clusteredRepos = new ClusteredFileUsageRepository(tmp.newFolder("other").toPath(), UUID.randomUUID(), peers);
 		
 		for (int i = 0; i < 20; i++) {
 			assertEquals(201, post("/test-app/prod/things/x", ""));
 		}
 		
-		clusteredRepos.recordUsages("test-app", "prod", "things", "x");
+		clusteredRepos.recordUsages(new UsageKey("test-app", "prod", "things", "x"));
 		
 		for (int i = 0; i < 20; i++) {
-			int usages = clusteredRepos.getUsages(new GetUsagesRequest("test-app", "prod", "things", "x", 1, false));
+			int usages = clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1, false);
 			assertEquals(21, usages);
 		}
 		
-		assertEquals(1, clusteredRepos.getUsages(new GetUsagesRequest("test-app", "prod", "things", "x", 1, true)));
+		assertEquals(1, clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1, true));
 		
 		get("/_stats", new TypeToken<List<Map<String, Object>>>(){}).forEach(System.out::println);;
     }

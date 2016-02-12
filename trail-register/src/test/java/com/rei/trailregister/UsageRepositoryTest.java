@@ -22,26 +22,27 @@ public class UsageRepositoryTest {
 	@Rule
 	public TemporaryFolder tmp = new TemporaryFolder();
 	
-	private UsageRepository repo;
+	private FileUsageRepository repo;
 	
 	@Before 
 	public void setup() {
-	    repo = new UsageRepository(tmp.getRoot().toPath());
+	    repo = new FileUsageRepository(tmp.getRoot().toPath());
 	}
 	
 	@Test
 	public void canReadAndWriteUsages() throws IOException {
-		repo.recordUsages("app", "env", "tests", "read_write", 5, LocalDate.now());
-		repo.recordUsages("app", "env", "tests", "read_write");
-		repo.recordUsages("app", "env", "tests", "read_write", LocalDate.now().minusDays(1));
-		repo.recordUsages("app", "env", "tests", "read_write", 4, LocalDate.now().minusDays(2));
+		UsageKey usageKey = new UsageKey("app", "env", "tests", "read_write");
+        repo.recordUsages(usageKey, 5, LocalDate.now());
+		repo.recordUsages(usageKey);
+		repo.recordUsages(usageKey, LocalDate.now().minusDays(1));
+		repo.recordUsages(usageKey, 4, LocalDate.now().minusDays(2));
 		
-		assertEquals(6, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 1, false)));
+		assertEquals(6, repo.getUsages(usageKey, 1, false));
 		
-		assertEquals(11, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 3, false)));
+		assertEquals(11, repo.getUsages(usageKey, 3, false));
 		
 		IntStream.range(0, 365).mapToObj(x -> LocalDate.now().minusDays(x)).forEach(date -> {
-		    repo.recordUsages("app", "env", "tests", "read_write", 1, date);    
+		    repo.recordUsages(usageKey, 1, date);    
 		});
 		
 		listFiles(tmp.getRoot().toPath());
@@ -50,11 +51,11 @@ public class UsageRepositoryTest {
 		
 		listFiles(tmp.getRoot().toPath());
 		
-		repo.recordUsages("app", "env", "tests", "read_write");
-		repo.recordUsages("app", "env", "tests", "read_write", 2, LocalDate.now().minusDays(2));
-		assertEquals(379, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 366, false)));
+		repo.recordUsages(usageKey);
+		repo.recordUsages(usageKey, 2, LocalDate.now().minusDays(2));
+		assertEquals(379, repo.getUsages(usageKey, 366, false));
 		
-		Map<String, Integer> usagesByDate = repo.getUsagesByDate(new GetUsagesRequest("app", "env", "tests", "read_write", 366, false));
+		Map<String, Integer> usagesByDate = repo.getUsagesByDate(usageKey, 366, false);
         System.out.println(usagesByDate);
         assertEquals(366, usagesByDate.size());
 		
@@ -62,22 +63,22 @@ public class UsageRepositoryTest {
 
 	@Test
 	public void canReadUsagesForNonExistentKey() {
-	    assertEquals(0, repo.getUsages(new GetUsagesRequest("app", "env", "tests", "read_write", 366, false)));
+	    assertEquals(0, repo.getUsages(new UsageKey("app", "env", "tests", "read_write"), 366, false));
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
 	public void requiresNonNullArgs() {
-	    repo.recordUsages(null, "blah", "blah", "<invalid");
+	    repo.recordUsages(new UsageKey(null, "blah", "blah", "<invalid"));
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
     public void requiresSafeArgs() {
-        repo.recordUsages("blah", "blah", "blah", "<invalid");
+        repo.recordUsages(new UsageKey("blah", "blah", "blah", "<invalid"));
     }
 	
 	@Test(expected=IllegalArgumentException.class)
     public void requiresNonNavigationalArgs() {
-        repo.recordUsages("blah", "blah", "blah", "..");
+        repo.recordUsages(new UsageKey("blah", "blah", "blah", ".."));
     }
 	
 	@Test(expected=IllegalArgumentException.class)

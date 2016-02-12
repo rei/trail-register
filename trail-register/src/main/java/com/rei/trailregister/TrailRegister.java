@@ -67,7 +67,7 @@ public class TrailRegister {
         }
         
         id = UUID.randomUUID();
-        repo = peers.isEmpty() ? new UsageRepository(dataDir) : new ClusteredUsageRepository(dataDir, id, peers);
+        repo = peers.isEmpty() ? new FileUsageRepository(dataDir) : new ClusteredFileUsageRepository(dataDir, id, peers);
         compactionExec.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
     }
     
@@ -99,17 +99,22 @@ public class TrailRegister {
         get("/:app/:env/:cat", (req, res) -> {
         	return repo.getKeys(req.params(":app"), req.params(":env"), req.params(":cat")).stream()
         			.collect(toMap(k -> k, 
-        					 k -> repo.getUsages(toUsagesRequest(req, k))));
+        					       k -> repo.getUsages(toUsageKey(req, k), days(req), isInternal(req))));
         });
         
-        get("/:app/:env/:cat/:key", (req, res) -> "true".equals(req.queryParams("by_date"))  
-                ? repo.getUsagesByDate(toUsagesRequest(req)) : repo.getUsages(toUsagesRequest(req)));
+        get("/:app/:env/:cat/:key", (req, res) -> {
+            if ("true".equals(req.queryParams("by_date"))) {
+                return repo.getUsagesByDate(toUsageKey(req), days(req), isInternal(req));
+            }
+            return repo.getUsages(toUsageKey(req), days(req), isInternal(req));
+        });
+                
         
         post("/:app/:env", (req, res) -> {
             Map<String, Map<String, Integer>> body = parseJson(req, new TypeToken<Map<String, Map<String, Integer>>>() {});
             body.forEach((category, usages) -> {
                 usages.forEach((key, num) -> {
-                    repo.recordUsages(req.params(":app"), req.params(":env"), category, key, num);
+                    repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), category, key), num);
                 });
             });
             res.status(201);
@@ -119,27 +124,30 @@ public class TrailRegister {
         post("/:app/:env/:cat", (req, res) -> {
             Map<String, Integer> body = parseJson(req, new TypeToken<Map<String, Integer>>() {});
             body.forEach((key, num) -> {
-                repo.recordUsages(req.params(":app"), req.params(":env"), req.params(":cat"), key, num);
+                repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), key), num);
             });
             res.status(201);
             return "";
         });
         
         post("/:app/:env/:cat/:key", (req, res) -> {
-            repo.recordUsages(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key"));
+            repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key")));
             res.status(201);
             return "";
         });
         
     }
 
-    private GetUsagesRequest toUsagesRequest(Request req) {
-        return toUsagesRequest(req, req.params(":key"));
+    private boolean isInternal(Request req) {
+        return req.headers(ClusterAwareTrailRegisterClient.CLUSTERING_HEADER) != null;
+    }
+
+    private UsageKey toUsageKey(Request req) {
+        return toUsageKey(req, req.params(":key"));
     }
     
-    private GetUsagesRequest toUsagesRequest(Request req, String key) {
-        return new GetUsagesRequest(req.params(":app"), req.params(":env"), req.params(":cat"), key, 
-                days(req), req.headers(ClusterAwareTrailRegisterClient.CLUSTERING_HEADER) != null);
+    private UsageKey toUsageKey(Request req, String key) {
+        return new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), key);
     }
     
     private <T> T parseJson(Request req, TypeToken<T> typeToken) {
