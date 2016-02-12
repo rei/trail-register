@@ -29,6 +29,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.rei.trailregister.cluster.ClusterAwareTrailRegisterClient;
+import com.rei.trailregister.cluster.ClusterUtils;
+import com.rei.trailregister.cluster.ClusteredFileUsageRepository;
 
 import spark.Request;
 import spark.Route;
@@ -88,25 +91,25 @@ public class TrailRegister {
     		}).collect(toList())
 		);
     	
-    	get("/health", (req, res) -> repo.getApps() != null ? "UP" : "DOWN");
+    	get("/health", (req, res) -> getRepo(req).getApps() != null ? "UP" : "DOWN");
     	
     	get("/version", (req, res) -> readVersionInfo());
     	
-    	get("/", (req, res) -> repo.getApps());
-        get("/:app", (req, res) -> repo.getEnvironments(req.params(":app")));
-        get("/:app/:env", (req, res) -> repo.getCategories(req.params(":app"), req.params(":env")));
+    	get("/", (req, res) -> getRepo(req).getApps());
+        get("/:app", (req, res) -> getRepo(req).getEnvironments(req.params(":app")));
+        get("/:app/:env", (req, res) -> getRepo(req).getCategories(req.params(":app"), req.params(":env")));
         
         get("/:app/:env/:cat", (req, res) -> {
-        	return repo.getKeys(req.params(":app"), req.params(":env"), req.params(":cat")).stream()
+        	return getRepo(req).getKeys(req.params(":app"), req.params(":env"), req.params(":cat")).stream()
         			.collect(toMap(k -> k, 
-        					       k -> repo.getUsages(toUsageKey(req, k), days(req), isInternal(req))));
+        					       k -> getRepo(req).getUsages(toUsageKey(req, k), days(req))));
         });
         
         get("/:app/:env/:cat/:key", (req, res) -> {
             if ("true".equals(req.queryParams("by_date"))) {
-                return repo.getUsagesByDate(toUsageKey(req), days(req), isInternal(req));
+                return getRepo(req).getUsagesByDate(toUsageKey(req), days(req));
             }
-            return repo.getUsages(toUsageKey(req), days(req), isInternal(req));
+            return getRepo(req).getUsages(toUsageKey(req), days(req));
         });
                 
         
@@ -114,7 +117,7 @@ public class TrailRegister {
             Map<String, Map<String, Integer>> body = parseJson(req, new TypeToken<Map<String, Map<String, Integer>>>() {});
             body.forEach((category, usages) -> {
                 usages.forEach((key, num) -> {
-                    repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), category, key), num);
+                    getRepo(req).recordUsages(new UsageKey(req.params(":app"), req.params(":env"), category, key), num);
                 });
             });
             res.status(201);
@@ -124,18 +127,27 @@ public class TrailRegister {
         post("/:app/:env/:cat", (req, res) -> {
             Map<String, Integer> body = parseJson(req, new TypeToken<Map<String, Integer>>() {});
             body.forEach((key, num) -> {
-                repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), key), num);
+                getRepo(req).recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), key), num);
             });
             res.status(201);
             return "";
         });
         
         post("/:app/:env/:cat/:key", (req, res) -> {
-            repo.recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key")));
+            getRepo(req).recordUsages(new UsageKey(req.params(":app"), req.params(":env"), req.params(":cat"), req.params(":key")));
             res.status(201);
             return "";
         });
         
+    }
+
+    private UsageRepository getRepo(Request req) {
+        if (repo instanceof ClusteredFileUsageRepository) {
+            if (isInternal(req)) {
+                return ((ClusteredFileUsageRepository) repo).getDelegate();
+            }
+        }
+        return repo;
     }
 
     private boolean isInternal(Request req) {

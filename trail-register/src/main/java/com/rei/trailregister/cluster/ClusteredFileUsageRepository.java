@@ -1,8 +1,9 @@
-package com.rei.trailregister;
+package com.rei.trailregister.cluster;
 
 import static java.util.stream.Collectors.toList;
 
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.net.HostAndPort;
+import com.rei.trailregister.FileUsageRepository;
+import com.rei.trailregister.UsageKey;
+import com.rei.trailregister.UsageRepository;
 import com.rei.trailregister.client.TrailRegisterClient;
 
-public class ClusteredFileUsageRepository extends FileUsageRepository {
+public class ClusteredFileUsageRepository implements UsageRepository {
 	private static Logger logger = LoggerFactory.getLogger(ClusteredFileUsageRepository.class);
 
     private ScheduledExecutorService availabilityCheckExecutor = Executors.newScheduledThreadPool(1); 
@@ -27,32 +31,70 @@ public class ClusteredFileUsageRepository extends FileUsageRepository {
     private List<Peer> possiblePeers;
 	private UUID id;
 	private volatile CountDownLatch initialized = new CountDownLatch(1);
+
+    private FileUsageRepository delegate;
 	
     public ClusteredFileUsageRepository(Path dataDir, UUID id, List<HostAndPort> peers) {
-        super(dataDir);
+        delegate = new FileUsageRepository(dataDir);
 		this.id = id;
         possiblePeers = peers.stream().map(Peer::new).collect(toList());
         availabilityCheckExecutor.scheduleAtFixedRate(this::checkAvailability, 0, 1, TimeUnit.MINUTES);
     }
     
+    public void recordUsages(UsageKey key) {
+        delegate.recordUsages(key);
+    }
+
+    public void recordUsages(UsageKey key, int num) {
+        delegate.recordUsages(key, num);
+    }
+
+    public void recordUsages(UsageKey key, LocalDate date) {
+        delegate.recordUsages(key, date);
+    }
+
+    public void recordUsages(UsageKey key, int num, LocalDate date) {
+        delegate.recordUsages(key, num, date);
+    }
+
+    public List<String> getApps() {
+        return delegate.getApps();
+    }
+
+    public List<String> getEnvironments(String app) {
+        return delegate.getEnvironments(app);
+    }
+
+    public List<String> getCategories(String app, String env) {
+        return delegate.getCategories(app, env);
+    }
+
+    public List<String> getKeys(String app, String env, String category) {
+        return delegate.getKeys(app, env, category);
+    }
+    
     @Override
-    public Map<String, Integer> getUsagesByDate(UsageKey key, int days, boolean internal) {
+    public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
     	awaitInitialization();
-        Map<String, Integer> localResult = super.getUsagesByDate(key, days, internal);
-        if (!internal) {
-            availablePeers.parallelStream().forEach(peer -> 
-                localResult.putAll(peer.client.getUsagesByDate(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days)));
-        }
+        Map<String, Integer> localResult = delegate.getUsagesByDate(key, days);
+        
+        availablePeers.parallelStream().forEach(peer -> 
+            localResult.putAll(peer.client.getUsagesByDate(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days)));
+        
         return localResult;
     }
 
     @Override
-    public int getUsages(UsageKey key, int days, boolean internal) {
+    public int getUsages(UsageKey key, int days) {
     	awaitInitialization();
-        int localResult = super.getUsages(key, days, internal);
-        return localResult + (!internal ? getUsagesFromPeers(key, days) : 0);
+        int localResult = delegate.getUsages(key, days);
+        return localResult + getUsagesFromPeers(key, days);
     }
 
+    public FileUsageRepository getDelegate() {
+        return delegate;
+    }
+    
     private int getUsagesFromPeers(UsageKey key, int days) {
         return availablePeers.parallelStream()
                              .mapToInt(peer -> peer.client.getUsages(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days))

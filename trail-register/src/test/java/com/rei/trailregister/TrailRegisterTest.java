@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.rei.trailregister.cluster.ClusteredFileUsageRepository;
 import com.squareup.okhttp.MediaType;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -107,11 +108,9 @@ public class TrailRegisterTest {
 		clusteredRepos.recordUsages(new UsageKey("test-app", "prod", "things", "x"));
 		
 		for (int i = 0; i < 20; i++) {
-			int usages = clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1, false);
+			int usages = clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1);
 			assertEquals(21, usages);
 		}
-		
-		assertEquals(1, clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1, true));
 		
 		get("/_stats", new TypeToken<List<Map<String, Object>>>(){}).forEach(System.out::println);;
     }

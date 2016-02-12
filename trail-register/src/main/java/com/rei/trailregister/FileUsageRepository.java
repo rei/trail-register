@@ -134,7 +134,7 @@ public class FileUsageRepository implements UsageRepository {
 	}
 	
 	@Override
-    public Map<String, Integer> getUsagesByDate(UsageKey key, int days, boolean internal) {
+    public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
 	    Map<String, Integer> compactedData = readCompactedFile(key.getApp(), key.getEnv(), key.getCategory(), key.getKey());
         
         LocalDate now = LocalDate.now();
@@ -146,7 +146,7 @@ public class FileUsageRepository implements UsageRepository {
 	}
 	
 	@Override
-    public int getUsages(UsageKey key, int days, boolean internal) {
+    public int getUsages(UsageKey key, int days) {
 	    Map<String, Integer> compactedData = readCompactedFile(key.getApp(), key.getEnv(), key.getCategory(), key.getKey());
 	    
 		LocalDate now = LocalDate.now();

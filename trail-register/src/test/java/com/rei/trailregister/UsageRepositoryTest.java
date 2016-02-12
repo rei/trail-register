@@ -37,9 +37,9 @@ public class UsageRepositoryTest {
 		repo.recordUsages(usageKey, LocalDate.now().minusDays(1));
 		repo.recordUsages(usageKey, 4, LocalDate.now().minusDays(2));
 		
-		assertEquals(6, repo.getUsages(usageKey, 1, false));
+		assertEquals(6, repo.getUsages(usageKey, 1));
 		
-		assertEquals(11, repo.getUsages(usageKey, 3, false));
+		assertEquals(11, repo.getUsages(usageKey, 3));
 		
 		IntStream.range(0, 365).mapToObj(x -> LocalDate.now().minusDays(x)).forEach(date -> {
 		    repo.recordUsages(usageKey, 1, date);    
@@ -53,9 +53,9 @@ public class UsageRepositoryTest {
 		
 		repo.recordUsages(usageKey);
 		repo.recordUsages(usageKey, 2, LocalDate.now().minusDays(2));
-		assertEquals(379, repo.getUsages(usageKey, 366, false));
+		assertEquals(379, repo.getUsages(usageKey, 366));
 		
-		Map<String, Integer> usagesByDate = repo.getUsagesByDate(usageKey, 366, false);
+		Map<String, Integer> usagesByDate = repo.getUsagesByDate(usageKey, 366);
         System.out.println(usagesByDate);
         assertEquals(366, usagesByDate.size());
 		
@@ -63,7 +63,7 @@ public class UsageRepositoryTest {
 
 	@Test
 	public void canReadUsagesForNonExistentKey() {
-	    assertEquals(0, repo.getUsages(new UsageKey("app", "env", "tests", "read_write"), 366, false));
+	    assertEquals(0, repo.getUsages(new UsageKey("app", "env", "tests", "read_write"), 366));
 	}
 	
 	@Test(expected=IllegalArgumentException.class)
