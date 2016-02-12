@@ -40,18 +40,6 @@ public class ClusteredFileUsageRepository implements UsageRepository {
         possiblePeers = peers.stream().map(Peer::new).collect(toList());
         availabilityCheckExecutor.scheduleAtFixedRate(this::checkAvailability, 0, 1, TimeUnit.MINUTES);
     }
-    
-    public void recordUsages(UsageKey key) {
-        delegate.recordUsages(key);
-    }
-
-    public void recordUsages(UsageKey key, int num) {
-        delegate.recordUsages(key, num);
-    }
-
-    public void recordUsages(UsageKey key, LocalDate date) {
-        delegate.recordUsages(key, date);
-    }
 
     public void recordUsages(UsageKey key, int num, LocalDate date) {
         delegate.recordUsages(key, num, date);

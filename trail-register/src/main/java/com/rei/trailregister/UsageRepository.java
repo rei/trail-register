@@ -6,9 +6,18 @@ import java.util.Map;
 
 public interface UsageRepository {
 
-    void recordUsages(UsageKey key);
-    void recordUsages(UsageKey key, int num);
-    void recordUsages(UsageKey key, LocalDate date);
+    default void recordUsages(UsageKey key) {
+        recordUsages(key, 1);
+    }
+    
+    default void recordUsages(UsageKey key, int num) {
+        recordUsages(key, num, LocalDate.now());
+    }
+    
+    default void recordUsages(UsageKey key, LocalDate date) {
+        recordUsages(key, 1, date);
+    }
+    
     void recordUsages(UsageKey key, int num, LocalDate date);
 
     List<String> getApps();

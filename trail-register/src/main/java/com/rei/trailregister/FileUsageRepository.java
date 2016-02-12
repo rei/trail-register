@@ -58,21 +58,6 @@ public class FileUsageRepository implements UsageRepository {
 	}
 	
 	@Override
-    public void recordUsages(UsageKey key) {
-		recordUsages(key, 1, LocalDate.now());
-	}
-	
-	@Override
-    public void recordUsages(UsageKey key, int num) {
-        recordUsages(key, num, LocalDate.now());
-    }
-	
-	@Override
-    public void recordUsages(UsageKey key, LocalDate date) {
-		recordUsages(key, 1, date);
-	}
-	
-	@Override
     public void recordUsages(UsageKey key, int num, LocalDate date) {
 		checkArgument("app", key.getApp());
 		checkArgument("env", key.getEnv());
