@@ -9,6 +9,10 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,13 +61,16 @@ public class TrailRegister {
                           ClusterUtils.parseHostAndPorts(System.getenv())).run();
     }
     
-    private ScheduledExecutorService compactionExec = Executors.newScheduledThreadPool(1);
+    private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
     private Gson json = new Gson();
     private UsageRepository repo;
     private UUID id;
     private Map<String, AtomicLong> elapsedTime = new ConcurrentHashMap<>();
     private Map<String, AtomicLong> invocations = new ConcurrentHashMap<>();
-
+    
+    private Collection<UsageKey> currentImport;
+    private Collection<UsageKey> imported;
+    
     public TrailRegister(Path dataDir, List<HostAndPort> peers) throws IOException {
         if (!Files.exists(dataDir)) {
             Files.createDirectories(dataDir);
@@ -71,13 +78,29 @@ public class TrailRegister {
         
         id = UUID.randomUUID();
         repo = peers.isEmpty() ? new FileUsageRepository(dataDir) : new ClusteredFileUsageRepository(dataDir, id, peers);
-        compactionExec.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
+        executor.scheduleWithFixedDelay(repo::runCompaction, 1, 1, TimeUnit.DAYS);
+    }
+    
+    public TrailRegister(String url, String user, String pass, String driverUrl, String driverClass) throws IOException {
+        repo = new DatabaseUsageRepository(url, user, pass, new DriverDownloader(driverUrl, driverClass));
     }
     
     public void run() {
         exception(IllegalArgumentException.class, (e, request, response) -> {
             response.status(400);
             response.body(e.getMessage());
+        });
+        
+        get("/_import", (req, res) -> {
+            if (imported == null || currentImport == null) {
+                return "no imports running or recently ran";
+            }
+            return "imported " + imported.size() + "/" + currentImport.size() + " records";
+        });
+        
+        post("/_import", (req, res) -> {
+            executor.submit(() -> importData(req.queryParams("dir"), days(req)));
+            return "import started";
         });
         
     	get("/_ping", (req, res) -> id.toString() );
@@ -138,7 +161,25 @@ public class TrailRegister {
             res.status(201);
             return "";
         });
+    }
+
+    private void importData(String dir, int days) {
+        FileUsageRepository fromRepo = new FileUsageRepository(Paths.get(dir));
         
+        currentImport = fromRepo.getApps().stream().flatMap(app -> 
+                        fromRepo.getEnvironments(app).stream().flatMap(env -> 
+                            fromRepo.getCategories(app, env).stream().flatMap(cat ->
+                                fromRepo.getKeys(app, env, cat).stream().map(key -> new UsageKey(app, env, cat, key)))))
+            .collect(toList());
+        
+        imported = new LinkedList<>();
+        
+        currentImport.forEach(key -> {
+            repo.getUsagesByDate(key, days).forEach((date, num) -> {
+                repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
+            });
+            imported.add(key);
+        });
     }
 
     private UsageRepository getRepo(Request req) {

@@ -7,13 +7,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import org.h2.Driver;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DatabaseUsageRepositoryTest {
 
     public static final String URL = "jdbc:h2:mem:test" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
-    private DatabaseUsageRepository repo = new DatabaseUsageRepository(URL, "sa", "sa", "org.h2.Driver");
+    private DatabaseUsageRepository repo = new DatabaseUsageRepository(URL, "sa", "sa", Driver::new);
     
     @Before
     public void setup() {

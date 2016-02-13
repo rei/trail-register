@@ -2,10 +2,12 @@ package com.rei.trailregister;
 
 import static java.time.format.DateTimeFormatter.BASIC_ISO_DATE;
 
+import java.sql.Driver;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.skife.jdbi.v2.DBI;
@@ -27,12 +29,12 @@ public class DatabaseUsageRepository implements UsageRepository {
     
     private DBI dbi;
 
-    public DatabaseUsageRepository(String url, String user, String pass, String driver) {
+    public DatabaseUsageRepository(String url, String user, String pass, Supplier<Driver> driverProvider) {
         BasicDataSource ds = new BasicDataSource();
         ds.setUrl(url);
         ds.setUsername(user);
         ds.setPassword(pass);
-        ds.setDriverClassName(driver);
+        ds.setDriver(driverProvider.get());
         ds.setMaxTotal(MAX_CONNECTION);
         
         dbi = new DBI(ds);

@@ -5,6 +5,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URLEncoder;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -115,6 +117,23 @@ public class TrailRegisterTest {
 		get("/_stats", new TypeToken<List<Map<String, Object>>>(){}).forEach(System.out::println);;
     }
     
+    @Test
+    public void importTest() throws IOException, InterruptedException {
+        Path toImportDir = tmp.newFolder("other").toPath();
+        FileUsageRepository otherRepos = new FileUsageRepository(toImportDir);
+        for (int i = 0; i < 100; i++) {
+            otherRepos.recordUsages(new UsageKey("a", "e", "c", "k" + i));
+        }
+        
+        String mainDir = URLEncoder.encode(toImportDir.toString(), "UTF-8");
+        System.out.println(post("/_import?dir=" + mainDir, new TypeToken<String>(){}));
+        System.out.println(get("/_import", new TypeToken<String>(){}));
+        
+        Thread.sleep(2000);
+        
+        System.out.println(get("/_import", new TypeToken<String>(){}));
+    }
+    
     @After
     public void cleanup() {
         Spark.stop();
@@ -139,7 +158,7 @@ public class TrailRegisterTest {
 
     int post(String path, Object body) throws IOException {
         Request request = new Request.Builder()
-                .url(baseUrl + path)
+                .url(baseUrl + path)                
                 .post(RequestBody.create(JSON, json.toJson(body)))
                 .build();
 
