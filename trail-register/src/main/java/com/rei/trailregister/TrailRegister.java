@@ -57,6 +57,12 @@ public class TrailRegister {
         
         Optional.ofNullable(System.getenv(PORT)).map(Integer::parseInt).ifPresent(p -> Spark.port(p));
         
+        String jdbcUser = System.getenv("JDBC_USER");
+        if (jdbcUser != null) {
+            new TrailRegister(System.getenv("JDBC_URL"), jdbcUser, System.getenv("JDBC_PASS"), 
+                              System.getenv("JDBC_DRIVER_URL"), System.getenv("JDBC_DRIVER_CLASS")).run();
+        }
+        
         new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
                           ClusterUtils.parseHostAndPorts(System.getenv())).run();
     }
