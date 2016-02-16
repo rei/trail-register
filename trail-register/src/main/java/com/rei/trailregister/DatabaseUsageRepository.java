@@ -19,13 +19,13 @@ public class DatabaseUsageRepository implements UsageRepository {
     private static final int MAX_CONNECTION = 100;
     
     private static final String INSERT = 
-            "insert into usages (app, env, category, key, date, num) values (?, ?, ?, ?, ?, ?)";
+            "insert into usages (app, env, category, \"key\", date, num) values (?, ?, ?, ?, ?, ?)";
     
     private static final String SELECT_BY_DATE = 
-            "select num from usages where app = ? and env = ? and category = ? and key = ? and date = ?";
+            "select num from usages where app = ? and env = ? and category = ? and \"key\" = ? and date = ?";
     
     private static final String UPDATE = 
-            "update usages set num = num + ? where app = ? and env = ? and category = ? and key = ? and date = ?";
+            "update usages set num = num + ? where app = ? and env = ? and category = ? and \"key\" = ? and date = ?";
     
     private DBI dbi;
 
@@ -82,7 +82,7 @@ public class DatabaseUsageRepository implements UsageRepository {
     @Override
     public List<String> getKeys(String app, String env, String category) {
         return dbi.withHandle(h -> {
-            return h.createQuery("select distinct key from usages where app = ? and env = ? and category = ?")
+            return h.createQuery("select distinct \"key\" from usages where app = ? and env = ? and category = ?")
                     .bind(0, app)
                     .bind(1, env)
                     .bind(2, category)
@@ -94,7 +94,7 @@ public class DatabaseUsageRepository implements UsageRepository {
     @Override
     public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
         return dbi.withHandle(h -> {
-            return h.createQuery("select date, num from usages where app = ? and env = ? and category = ? and key = ? and date > ?")
+            return h.createQuery("select date, num from usages where app = ? and env = ? and category = ? and \"key\" = ? and date > ?")
                     .bind(0, key.getApp())
                     .bind(1, key.getEnv())
                     .bind(2, key.getCategory())
@@ -111,7 +111,7 @@ public class DatabaseUsageRepository implements UsageRepository {
     @Override
     public int getUsages(UsageKey key, int days) {
         return dbi.withHandle(h -> {
-            return h.createQuery("select sum(num) from usages where app = ? and env = ? and category = ? and key = ? and date > ?")
+            return h.createQuery("select sum(num) from usages where app = ? and env = ? and category = ? and \"key\" = ? and date > ?")
                     .bind(0, key.getApp())
                     .bind(1, key.getEnv())
                     .bind(2, key.getCategory())

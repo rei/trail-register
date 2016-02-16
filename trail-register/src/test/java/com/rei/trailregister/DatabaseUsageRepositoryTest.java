@@ -19,7 +19,7 @@ public class DatabaseUsageRepositoryTest {
     @Before
     public void setup() {
         repo.getDbi().withHandle(h -> {
-           h.execute("create table usages (app varchar(20), env varchar(20), category varchar(30), key varchar(100), date int, num int)"); 
+           h.execute("create table usages (app varchar(20), env varchar(20), category varchar(30), \"key\" varchar(100), date int, num int)"); 
            return null; 
         });
     }
