@@ -61,10 +61,10 @@ public class TrailRegister {
         if (jdbcUser != null) {
             new TrailRegister(System.getenv("JDBC_URL"), jdbcUser, System.getenv("JDBC_PASS"), 
                               System.getenv("JDBC_DRIVER_URL"), System.getenv("JDBC_DRIVER_CLASS")).run();
-        }
-        
-        new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
-                          ClusterUtils.parseHostAndPorts(System.getenv())).run();
+        } else {
+            new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
+                    ClusterUtils.parseHostAndPorts(System.getenv())).run();
+        }        
     }
     
     private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
