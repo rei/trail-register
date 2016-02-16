@@ -88,6 +88,7 @@ public class TrailRegister {
     }
     
     public TrailRegister(String url, String user, String pass, String driverUrl, String driverClass) throws IOException {
+        id = UUID.randomUUID();
         repo = new DatabaseUsageRepository(url, user, pass, new DriverDownloader(driverUrl, driverClass));
     }
     
@@ -140,7 +141,6 @@ public class TrailRegister {
             }
             return getRepo(req).getUsages(toUsageKey(req), days(req));
         });
-                
         
         post("/:app/:env", (req, res) -> {
             Map<String, Map<String, Integer>> body = parseJson(req, new TypeToken<Map<String, Map<String, Integer>>>() {});
