@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 import org.skife.jdbi.v2.util.IntegerColumnMapper;
 import org.skife.jdbi.v2.util.StringColumnMapper;
 
@@ -42,15 +43,21 @@ public class DatabaseUsageRepository implements UsageRepository {
 
     @Override
     public void recordUsages(UsageKey key, int num, LocalDate date) {
-        dbi.withHandle(h -> {
+        dbi.useHandle(h -> {
             List<Map<String, Object>> result = h.select(SELECT_BY_DATE, key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), date.toEpochDay());
             if (result.isEmpty()) {
-                h.insert(INSERT, key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), date.toEpochDay(), num);
-            } else {
-                h.update(UPDATE, num, key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), date.toEpochDay());
+                try {
+                    h.insert(INSERT, key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), date.toEpochDay(), num);
+                    return;
+                } catch (UnableToExecuteStatementException e) {
+                    String message = e.getCause().getMessage().toLowerCase();
+                    // if someone beat us to it and it's a constraint violation then ignore exception and try update    
+                    if (!message.contains("duplicate") && !message.contains("constraint")) {
+                        throw e;
+                    }
+                }
             }
-            
-            return null;
+            h.update(UPDATE, num, key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), date.toEpochDay());
         });
     }
 
