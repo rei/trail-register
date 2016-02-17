@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
-import org.skife.jdbi.v2.util.IntegerColumnMapper;
 import org.skife.jdbi.v2.util.LongColumnMapper;
 import org.skife.jdbi.v2.util.StringColumnMapper;
 
