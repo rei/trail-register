@@ -110,7 +110,7 @@ public class TrailRegisterTest {
 		clusteredRepos.recordUsages(new UsageKey("test-app", "prod", "things", "x"));
 		
 		for (int i = 0; i < 20; i++) {
-			int usages = clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1);
+			long usages = clusteredRepos.getUsages(new UsageKey("test-app", "prod", "things", "x"), 1);
 			assertEquals(21, usages);
 		}
 		

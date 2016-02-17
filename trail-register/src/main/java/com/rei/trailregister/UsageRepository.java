@@ -25,7 +25,7 @@ public interface UsageRepository {
     List<String> getCategories(String app, String env);
     List<String> getKeys(String app, String env, String category);
     Map<String, Integer> getUsagesByDate(UsageKey key, int days);
-    int getUsages(UsageKey key, int days);
+    long getUsages(UsageKey key, int days);
     
     default void runCompaction() {}
 }

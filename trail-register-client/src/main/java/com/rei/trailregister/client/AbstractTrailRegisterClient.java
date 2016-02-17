@@ -31,7 +31,7 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     }
 
     @Override
-    public int getUsages(String app, String env, String category, String key) {
+    public long getUsages(String app, String env, String category, String key) {
         return getUsages(app, env, category, key, DEFAULT_DAYS);
     }
 
@@ -46,8 +46,8 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     }
 
     @Override
-    public int getUsages(String app, String env, String category, String key, int days) {
-        return get(path(app, env, category, key) + "?days=" + days, new TypeToken<Integer>(){});
+    public long getUsages(String app, String env, String category, String key, int days) {
+        return get(path(app, env, category, key) + "?days=" + days, new TypeToken<Long>(){});
     }
 
     @Override

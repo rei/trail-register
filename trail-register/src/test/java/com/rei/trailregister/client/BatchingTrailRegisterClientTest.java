@@ -58,7 +58,7 @@ public class BatchingTrailRegisterClientTest {
 		
 		listFiles(tmp.getRoot().toPath());
 		
-		int usages = client.getUsages("test-app", "prod", "things", "thing0");
+		long usages = client.getUsages("test-app", "prod", "things", "thing0");
 		assertEquals(250, usages);
 		
 		usages = client.getUsages("test-app", "prod", "things", "thing0", 1);

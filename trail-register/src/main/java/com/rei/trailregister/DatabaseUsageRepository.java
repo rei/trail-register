@@ -13,6 +13,7 @@ import org.apache.commons.dbcp2.BasicDataSource;
 import org.skife.jdbi.v2.DBI;
 import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 import org.skife.jdbi.v2.util.IntegerColumnMapper;
+import org.skife.jdbi.v2.util.LongColumnMapper;
 import org.skife.jdbi.v2.util.StringColumnMapper;
 
 public class DatabaseUsageRepository implements UsageRepository {
@@ -116,7 +117,7 @@ public class DatabaseUsageRepository implements UsageRepository {
     }
 
     @Override
-    public int getUsages(UsageKey key, int days) {
+    public long getUsages(UsageKey key, int days) {
         return dbi.withHandle(h -> {
             return h.createQuery("select sum(num) from usages where app = ? and env = ? and category = ? and \"key\" = ? and date > ?")
                     .bind(0, key.getApp())
@@ -124,7 +125,7 @@ public class DatabaseUsageRepository implements UsageRepository {
                     .bind(2, key.getCategory())
                     .bind(3, key.getKey())
                     .bind(4, LocalDate.now().minusDays(days).toEpochDay())
-                    .map(IntegerColumnMapper.PRIMITIVE)
+                    .map(LongColumnMapper.PRIMITIVE)
                     .first();
         });
     }

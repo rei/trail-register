@@ -73,9 +73,9 @@ public class ClusteredFileUsageRepository implements UsageRepository {
     }
 
     @Override
-    public int getUsages(UsageKey key, int days) {
+    public long getUsages(UsageKey key, int days) {
     	awaitInitialization();
-        int localResult = delegate.getUsages(key, days);
+        long localResult = delegate.getUsages(key, days);
         return localResult + getUsagesFromPeers(key, days);
     }
 
@@ -83,9 +83,9 @@ public class ClusteredFileUsageRepository implements UsageRepository {
         return delegate;
     }
     
-    private int getUsagesFromPeers(UsageKey key, int days) {
+    private long getUsagesFromPeers(UsageKey key, int days) {
         return availablePeers.parallelStream()
-                             .mapToInt(peer -> peer.client.getUsages(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days))
+                             .mapToLong(peer -> peer.client.getUsages(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days))
                              .sum();
     }
     
