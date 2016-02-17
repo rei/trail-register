@@ -107,7 +107,11 @@ public class TrailRegister {
         });
         
         post("/_import", (req, res) -> {
-            executor.submit(() -> importData(req.queryParams("dir"), req.queryParams("app"), req.queryParams("env"), days(req)));
+            String dir = req.queryParams("dir");
+            String app = req.queryParams("app");
+            String env = req.queryParams("env");
+            int days = days(req);
+            executor.submit(() -> importData(dir, app, env, days));
             return "import started";
         });
         
@@ -172,6 +176,7 @@ public class TrailRegister {
 
     private void importData(String dir, String importApp, String importEnv, int days) {
         try {
+            System.out.println("importing data from " + dir);
             FileUsageRepository fromRepo = new FileUsageRepository(Paths.get(dir));
             
             List<String> apps = importApp != null ? Arrays.asList(importApp) : fromRepo.getApps();
