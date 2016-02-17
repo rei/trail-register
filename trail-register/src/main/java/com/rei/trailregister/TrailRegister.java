@@ -194,7 +194,7 @@ public class TrailRegister {
             imported = new LinkedList<>();
             
             currentImport.forEach(key -> {
-                repo.getUsagesByDate(key, days).forEach((date, num) -> {
+                fromRepo.getUsagesByDate(key, days).forEach((date, num) -> {
                     repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
                 });
                 imported.add(key);
