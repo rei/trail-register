@@ -194,10 +194,15 @@ public class TrailRegister {
             imported = new LinkedList<>();
             
             currentImport.forEach(key -> {
-                fromRepo.getUsagesByDate(key, days).forEach((date, num) -> {
-                    repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
-                });
-                imported.add(key);
+                try {
+                    fromRepo.getUsagesByDate(key, days).forEach((date, num) -> {
+                        repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
+                    });
+                    imported.add(key);
+                } catch (Exception e) {
+                    System.out.println("error importing key " + key);
+                    e.printStackTrace();
+                }                
             });
         } catch (Exception e) {
             e.printStackTrace();

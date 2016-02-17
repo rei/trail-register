@@ -218,6 +218,8 @@ public class FileUsageRepository implements UsageRepository {
     private int readDataFile(Path dateFile) {
         try {
             return Integer.parseInt(new String(Files.readAllBytes(dateFile)));
+        } catch (NumberFormatException e) {
+            return 0; // file contains invalid data somehow
         } catch (IOException e) {
             logger.error("failed to read data file", e);
             throw new RuntimeException(e);
