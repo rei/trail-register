@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -106,7 +107,7 @@ public class TrailRegister {
         });
         
         post("/_import", (req, res) -> {
-            executor.submit(() -> importData(req.queryParams("dir"), days(req)));
+            executor.submit(() -> importData(req.queryParams("dir"), req.queryParams("app"), req.queryParams("env"), days(req)));
             return "import started";
         });
         
@@ -169,23 +170,33 @@ public class TrailRegister {
         });
     }
 
-    private void importData(String dir, int days) {
-        FileUsageRepository fromRepo = new FileUsageRepository(Paths.get(dir));
-        
-        currentImport = fromRepo.getApps().stream().flatMap(app -> 
-                        fromRepo.getEnvironments(app).stream().flatMap(env -> 
-                            fromRepo.getCategories(app, env).stream().flatMap(cat ->
-                                fromRepo.getKeys(app, env, cat).stream().map(key -> new UsageKey(app, env, cat, key)))))
-            .collect(toList());
-        
-        imported = new LinkedList<>();
-        
-        currentImport.forEach(key -> {
-            repo.getUsagesByDate(key, days).forEach((date, num) -> {
-                repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
+    private void importData(String dir, String importApp, String importEnv, int days) {
+        try {
+            FileUsageRepository fromRepo = new FileUsageRepository(Paths.get(dir));
+            
+            List<String> apps = importApp != null ? Arrays.asList(importApp) : fromRepo.getApps();
+            
+            currentImport = apps.stream().flatMap(app -> {
+                                List<String> envs = importEnv != null ? Arrays.asList(importEnv) : fromRepo.getEnvironments(app);
+                                return envs.stream().flatMap(env -> {
+                                    System.out.println("finding keys for " + app + "/" + env);
+                                    return fromRepo.getCategories(app, env).stream().flatMap(cat ->
+                                                fromRepo.getKeys(app, env, cat).stream().map(key -> new UsageKey(app, env, cat, key)));
+                                });
+                            })
+                .collect(toList());
+            
+            imported = new LinkedList<>();
+            
+            currentImport.forEach(key -> {
+                repo.getUsagesByDate(key, days).forEach((date, num) -> {
+                    repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
+                });
+                imported.add(key);
             });
-            imported.add(key);
-        });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private UsageRepository getRepo(Request req) {
