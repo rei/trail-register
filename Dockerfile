@@ -1,4 +1,4 @@
-FROM jeanblanchard/java:8
+FROM java:8-jre-alpine
 
 ENV DATA_DIR /data
 VOLUME /data
