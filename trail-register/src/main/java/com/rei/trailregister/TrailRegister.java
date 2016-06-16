@@ -25,6 +25,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import spark.Request;
+import spark.Route;
+import spark.Spark;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,13 +38,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
 import com.rei.trailregister.cluster.ClusterAwareTrailRegisterClient;
 import com.rei.trailregister.cluster.ClusterUtils;
 import com.rei.trailregister.cluster.ClusteredFileUsageRepository;
-
-import spark.Request;
-import spark.Route;
-import spark.Spark;
 
 public class TrailRegister {
 	private static final String DATA_DIR_VAR = "DATA_DIR";
@@ -58,10 +59,12 @@ public class TrailRegister {
         
         Optional.ofNullable(System.getenv(PORT)).map(Integer::parseInt).ifPresent(p -> Spark.port(p));
         
-        String jdbcUser = System.getenv("JDBC_USER");
-        if (jdbcUser != null) {
-            new TrailRegister(System.getenv("JDBC_URL"), jdbcUser, System.getenv("JDBC_PASS"), 
-                              System.getenv("JDBC_DRIVER_URL"), System.getenv("JDBC_DRIVER_CLASS")).run();
+        String jdbcDriverUrl = System.getenv("JDBC_DRIVER_URL");
+        if (jdbcDriverUrl != null) {
+            new TrailRegister(System.getenv("DATASTORE_URL"), System.getenv("DATASTORE_USER"),
+                              System.getenv("DATASTORE_PASS"), System.getenv("JDBC_DRIVER_URL"),
+                              System.getenv("DATASTORE_DRIVER"))
+                    .run();
         } else {
             new TrailRegister(Paths.get(Optional.ofNullable(System.getenv(DATA_DIR_VAR)).orElse("/trail-register-data")),
                     ClusterUtils.parseHostAndPorts(System.getenv())).run();
