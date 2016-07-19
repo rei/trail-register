@@ -5,4 +5,4 @@ VOLUME /data
 ADD trail-register.jar /trail-register.jar
 EXPOSE 4567
 
-CMD java -jar trail-register.jar
+CMD java -Xmx512m -jar trail-register.jar
