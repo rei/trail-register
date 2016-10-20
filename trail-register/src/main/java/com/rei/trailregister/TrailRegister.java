@@ -199,7 +199,7 @@ public class TrailRegister {
             currentImport.forEach(key -> {
                 try {
                     fromRepo.getUsagesByDate(key, days).forEach((date, num) -> {
-                        repo.recordUsages(key, num, LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
+                        repo.recordUsages(key, num.intValue(), LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE));
                     });
                     imported.add(key);
                 } catch (Exception e) {

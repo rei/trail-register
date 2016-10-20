@@ -44,7 +44,7 @@ public class DatabaseUsageRepositoryTest {
         repo.recordUsages(usageKey, 2, LocalDate.now().minusDays(2));
         assertEquals(379, repo.getUsages(usageKey, 366));
         
-        Map<String, Integer> usagesByDate = repo.getUsagesByDate(usageKey, 366);
+        Map<String, Long> usagesByDate = repo.getUsagesByDate(usageKey, 366);
         System.out.println(usagesByDate);
         assertEquals(365, usagesByDate.size());
     }

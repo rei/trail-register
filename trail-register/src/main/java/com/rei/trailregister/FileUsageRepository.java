@@ -119,15 +119,15 @@ public class FileUsageRepository implements UsageRepository {
 	}
 	
 	@Override
-    public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
+    public Map<String, Long> getUsagesByDate(UsageKey key, int days) {
 	    Map<String, Integer> compactedData = readCompactedFile(key.getApp(), key.getEnv(), key.getCategory(), key.getKey());
         
         LocalDate now = LocalDate.now();
         return new TreeMap<>(IntStream.range(0, days)
                                       .mapToObj(delta -> now.minusDays(delta))
                                       .collect(toMap(BASIC_ISO_DATE::format, 
-                                                     date -> (int) getUsages(key.getApp(), key.getEnv(), key.getCategory(), 
-                                                                             key.getKey(), date, compactedData))));
+                                                     date -> getUsages(key.getApp(), key.getEnv(), key.getCategory(),
+                                                                       key.getKey(), date, compactedData))));
 	}
 	
 	@Override

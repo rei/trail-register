@@ -99,7 +99,7 @@ public class DatabaseUsageRepository implements UsageRepository {
     }
 
     @Override
-    public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
+    public Map<String, Long> getUsagesByDate(UsageKey key, int days) {
         return dbi.withHandle(h -> {
             return h.createQuery("select date, num from usages where app = ? and env = ? and category = ? and \"key\" = ? and date > ?")
                     .bind(0, key.getApp())
@@ -108,7 +108,7 @@ public class DatabaseUsageRepository implements UsageRepository {
                     .bind(3, key.getKey())
                     .bind(4, LocalDate.now().minusDays(days).toEpochDay())
                     .fold(new HashMap<>(), (m, rs, ctx) -> {
-                        m.put(LocalDate.ofEpochDay(rs.getLong(1)).format(BASIC_ISO_DATE), rs.getInt(2));
+                        m.put(LocalDate.ofEpochDay(rs.getLong(1)).format(BASIC_ISO_DATE), rs.getLong(2));
                         return m;
                     });
             

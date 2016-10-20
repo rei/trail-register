@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.net.HostAndPort;
+
 import com.rei.trailregister.FileUsageRepository;
 import com.rei.trailregister.UsageKey;
 import com.rei.trailregister.UsageRepository;
@@ -62,9 +63,9 @@ public class ClusteredFileUsageRepository implements UsageRepository {
     }
     
     @Override
-    public Map<String, Integer> getUsagesByDate(UsageKey key, int days) {
+    public Map<String, Long> getUsagesByDate(UsageKey key, int days) {
     	awaitInitialization();
-        Map<String, Integer> localResult = delegate.getUsagesByDate(key, days);
+        Map<String, Long> localResult = delegate.getUsagesByDate(key, days);
         
         availablePeers.parallelStream().forEach(peer -> 
             localResult.putAll(peer.client.getUsagesByDate(key.getApp(), key.getEnv(), key.getCategory(), key.getKey(), days)));
