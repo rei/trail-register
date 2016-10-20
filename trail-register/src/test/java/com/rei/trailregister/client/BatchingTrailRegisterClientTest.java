@@ -13,6 +13,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import spark.Spark;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -20,8 +22,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import com.rei.trailregister.TrailRegister;
-
-import spark.Spark;
 
 public class BatchingTrailRegisterClientTest {
 	
@@ -64,10 +64,10 @@ public class BatchingTrailRegisterClientTest {
 		usages = client.getUsages("test-app", "prod", "things", "thing0", 1);
         assertEquals(250, usages);
 		
-		Map<String, Integer> usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0");
+		Map<String, Long> usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0");
 		System.out.println(usagesByDate);
         assertEquals(AbstractTrailRegisterClient.DEFAULT_DAYS, usagesByDate.size()); 
-        assertEquals(250, (int) usagesByDate.values().stream().reduce(Integer::sum).orElse(0));
+        assertEquals(Long.valueOf(250), usagesByDate.values().stream().reduce(Long::sum).orElse(Long.valueOf(0)));
         
         usagesByDate = client.getUsagesByDate("test-app", "prod", "things", "thing0", 10);
         assertEquals(10, usagesByDate.size()); 
