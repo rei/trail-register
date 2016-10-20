@@ -6,13 +6,13 @@ import java.util.Map;
 public interface TrailRegisterClient {
 	void recordUsage(String app, String env, String category, String key);
 	long getUsages(String app, String env, String category, String key);
-	Map<String, Integer> getUsagesByDate(String app, String env, String category, String key);
-    Map<String, Integer> getAllUsages(String app, String env, String category);
+	Map<String, Long> getUsagesByDate(String app, String env, String category, String key);
+    Map<String, Long> getAllUsages(String app, String env, String category);
     
     
     long getUsages(String app, String env, String category, String key, int days);
-    Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days);
-    Map<String, Integer> getAllUsages(String app, String env, String category, int days);
+    Map<String, Long> getUsagesByDate(String app, String env, String category, String key, int days);
+    Map<String, Long> getAllUsages(String app, String env, String category, int days);
 
     String ping();
     List<String> getApps();

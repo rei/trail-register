@@ -36,12 +36,12 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     }
 
     @Override
-    public Map<String, Integer> getAllUsages(String app, String env, String category) {
+    public Map<String, Long> getAllUsages(String app, String env, String category) {
         return getAllUsages(app, env, category, DEFAULT_DAYS);
     }
 
     @Override
-    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key) {
+    public Map<String, Long> getUsagesByDate(String app, String env, String category, String key) {
         return getUsagesByDate(app, env, category, key, DEFAULT_DAYS);
     }
 
@@ -51,13 +51,13 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
     }
 
     @Override
-    public Map<String, Integer> getAllUsages(String app, String env, String category, int days) {
-        return get(path(app, env, category) + "?days=" + days, new TypeToken<Map<String, Integer>>(){});
+    public Map<String, Long> getAllUsages(String app, String env, String category, int days) {
+        return get(path(app, env, category) + "?days=" + days, new TypeToken<Map<String, Long>>(){});
     }
 
     @Override
-    public Map<String, Integer> getUsagesByDate(String app, String env, String category, String key, int days) {
-        return get(path(app, env, category, key + "?by_date=true&days=" + days), new TypeToken<Map<String, Integer>>(){});
+    public Map<String, Long> getUsagesByDate(String app, String env, String category, String key, int days) {
+        return get(path(app, env, category, key + "?by_date=true&days=" + days), new TypeToken<Map<String, Long>>(){});
     }
 
     @Override
