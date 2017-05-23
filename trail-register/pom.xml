@@ -68,7 +68,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<version>1.2.5.RELEASE</version>
+				<version>1.5.1.RELEASE</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -80,4 +80,49 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>docker</id>
+			<build>
+				<finalName>${project.artifactId}</finalName>
+				<plugins>
+					<plugin>
+						<groupId>com.spotify</groupId>
+						<artifactId>docker-maven-plugin</artifactId>
+						<version>0.4.13</version>
+						<configuration>
+							<imageName>reicoop/trail-register</imageName>
+							<baseImage>openjdk:8-jre-alpine</baseImage>
+							<cmd>java -Xmx512m -jar trail-register.jar</cmd>
+							<env>
+								<DATA_DIR>/data</DATA_DIR>
+							</env>
+							<volumes>
+								<volume>/data</volume>
+							</volumes>
+							<exposes>
+								<expose>4567</expose>
+							</exposes>
+							<resources>
+								<resource>
+									<targetPath>/</targetPath>
+									<directory>${project.build.directory}</directory>
+									<include>${project.build.finalName}.jar</include>
+								</resource>
+							</resources>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>build</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
