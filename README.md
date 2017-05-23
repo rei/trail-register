@@ -8,7 +8,7 @@ Trail Register can be run via docker or with the standalone jar directly.
 
 **Docker:**
 
-    docker run -d -p 4567:4567 trail-register
+    docker run -d -p 4567:4567 -v /data/trail-register:/data reicoop/trail-register
 
 **Java**
 
@@ -23,8 +23,8 @@ Load balancing must be handled externally by some other tool such as HA-Proxy, n
 
 **Docker:**              
 
-    docker run -d -p 4567:4567 -e PEERS=${HOST}:4567,${HOST}:4568 trail-register
-    docker run -d -p 4568:4567 -e PEERS=${HOST}:4567,${HOST}:4568 trail-register
+    docker run -d -p 4567:4567 -e PEERS=${HOST}:4567,${HOST}:4568 reicoop/trail-register
+    docker run -d -p 4568:4567 -e PEERS=${HOST}:4567,${HOST}:4568 reicoop/trail-register
 
 ## REST Endpoints
 
