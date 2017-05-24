@@ -109,7 +109,10 @@ public class TrailRegister {
             }
             return "imported " + imported.size() + "/" + currentImport.size() + " records";
         });
-        
+        post("/_compact", (req, res) -> {
+            executor.execute(repo::runCompaction);
+            return "success";
+         });
         post("/_import", (req, res) -> {
             String dir = req.queryParams("dir");
             String srcHost = req.queryParams("srcHost");
