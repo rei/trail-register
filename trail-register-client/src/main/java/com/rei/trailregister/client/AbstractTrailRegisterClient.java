@@ -82,7 +82,7 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
 
     @Override
     public List<String> getKeys(String app, String env, String category) {
-        return get(path(app, env, category), new TypeToken<List<String>>(){});
+        return get(path(app, env, category) + "?keys=true", new TypeToken<List<String>>(){});
     }
     
     protected int post(String app, String env, Object body) throws IOException {

@@ -39,6 +39,7 @@ import com.google.common.net.HostAndPort;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import com.rei.trailregister.client.DirectTrailRegisterClient;
 import com.rei.trailregister.cluster.ClusterAwareTrailRegisterClient;
 import com.rei.trailregister.cluster.ClusterUtils;
 import com.rei.trailregister.cluster.ClusteredFileUsageRepository;
@@ -57,7 +58,7 @@ public class TrailRegister {
             logger.error("error!", error);
         });
         
-        Optional.ofNullable(System.getenv(PORT)).map(Integer::parseInt).ifPresent(p -> Spark.port(p));
+        Optional.ofNullable(System.getenv(PORT)).map(Integer::parseInt).ifPresent(Spark::port);
         
         String jdbcDriverUrl = System.getenv("JDBC_DRIVER_URL");
         if (jdbcDriverUrl != null) {
@@ -111,10 +112,11 @@ public class TrailRegister {
         
         post("/_import", (req, res) -> {
             String dir = req.queryParams("dir");
+            String srcHost = req.queryParams("srcHost");
             String app = req.queryParams("app");
             String env = req.queryParams("env");
             int days = days(req);
-            executor.submit(() -> importData(dir, app, env, days));
+            executor.submit(() -> importData(dir, srcHost, app, env, days));
             return "import started";
         });
         
@@ -136,11 +138,15 @@ public class TrailRegister {
     	get("/", (req, res) -> getRepo(req).getApps());
         get("/:app", (req, res) -> getRepo(req).getEnvironments(req.params(":app")));
         get("/:app/:env", (req, res) -> getRepo(req).getCategories(req.params(":app"), req.params(":env")));
-        
+
         get("/:app/:env/:cat", (req, res) -> {
-        	return getRepo(req).getKeys(req.params(":app"), req.params(":env"), req.params(":cat")).stream()
-        			.collect(toMap(k -> k, 
-        					       k -> getRepo(req).getUsages(toUsageKey(req, k), days(req))));
+            List<String> keys = getRepo(req).getKeys(req.params(":app"), req.params(":env"), req.params(":cat"));
+
+            if ("true".equals(req.queryParams("keys"))) {
+                return keys;
+            }
+
+            return keys.stream().collect(toMap(k -> k, k -> getRepo(req).getUsages(toUsageKey(req, k), days(req))));
         });
         
         get("/:app/:env/:cat/:key", (req, res) -> {
@@ -177,21 +183,20 @@ public class TrailRegister {
         });
     }
 
-    private void importData(String dir, String importApp, String importEnv, int days) {
+    private void importData(String dir, String srcHost, String importApp, String importEnv, int days) {
         try {
-            System.out.println("importing data from " + dir);
-            FileUsageRepository fromRepo = new FileUsageRepository(Paths.get(dir));
+            UsageRepository fromRepo = getFromUsageRepository(dir, srcHost);
             
             List<String> apps = importApp != null ? Arrays.asList(importApp) : fromRepo.getApps();
             
             currentImport = apps.stream().flatMap(app -> {
-                                List<String> envs = importEnv != null ? Arrays.asList(importEnv) : fromRepo.getEnvironments(app);
-                                return envs.stream().flatMap(env -> {
-                                    System.out.println("finding keys for " + app + "/" + env);
-                                    return fromRepo.getCategories(app, env).stream().flatMap(cat ->
-                                                fromRepo.getKeys(app, env, cat).stream().map(key -> new UsageKey(app, env, cat, key)));
-                                });
-                            })
+                    List<String> envs = importEnv != null ? Arrays.asList(importEnv) : fromRepo.getEnvironments(app);
+                    return envs.stream().flatMap(env -> {
+                        System.out.println("finding keys for " + app + "/" + env);
+                        return fromRepo.getCategories(app, env).stream().flatMap(cat ->
+                                    fromRepo.getKeys(app, env, cat).stream().map(key -> new UsageKey(app, env, cat, key)));
+                    });
+                })
                 .collect(toList());
             
             imported = new LinkedList<>();
@@ -210,6 +215,19 @@ public class TrailRegister {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private UsageRepository getFromUsageRepository(String dir, String srcHost) {
+        if (dir != null && srcHost == null) {
+            System.out.println("importing data from " + dir);
+            return new FileUsageRepository(Paths.get(dir));
+        }
+        if (dir == null && srcHost != null) {
+            System.out.println("importing data from " + srcHost);
+            return new ReadOnlyClientUsageRepository(new DirectTrailRegisterClient("http://" + srcHost));
+        }
+
+        throw new IllegalArgumentException("either dir or srcHost may be set!");
     }
 
     private UsageRepository getRepo(Request req) {
