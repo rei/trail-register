@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,12 +46,13 @@ import com.rei.trailregister.cluster.ClusterUtils;
 import com.rei.trailregister.cluster.ClusteredFileUsageRepository;
 
 public class TrailRegister {
-	private static final String DATA_DIR_VAR = "DATA_DIR";
+    private static final String DATA_DIR_VAR = "DATA_DIR";
 
     private static final String PORT = "PORT";
 
     private static final String POM_PROPS = "META-INF/maven/com.rei.stats/trail-register/pom.properties";
-    
+    public static final String POOL_SIZE = "FORK_POOL_SIZE";
+
     private static Logger logger = LoggerFactory.getLogger(TrailRegister.class);
     
     public static void main(String[] args) throws IOException {
@@ -73,6 +75,8 @@ public class TrailRegister {
     }
     
     private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+    private ForkJoinPool forkJoinPool = new ForkJoinPool(getPoolSize());
+
     private Gson json = new Gson();
     private UsageRepository repo;
     private UUID id;
@@ -149,7 +153,8 @@ public class TrailRegister {
                 return keys;
             }
 
-            return keys.stream().collect(toMap(k -> k, k -> getRepo(req).getUsages(toUsageKey(req, k), days(req))));
+            return forkJoinPool.submit(() ->
+                keys.parallelStream().collect(toMap(k -> k, k -> getRepo(req).getUsages(toUsageKey(req, k), days(req))))).get();
         });
         
         get("/:app/:env/:cat/:key", (req, res) -> {
@@ -301,4 +306,11 @@ public class TrailRegister {
         }
 	    return props;
 	}
+
+    private static int getPoolSize() {
+        if (System.getenv(POOL_SIZE) != null) {
+            return Integer.parseInt(System.getenv(POOL_SIZE));
+        }
+        return 10;
+    }
 }

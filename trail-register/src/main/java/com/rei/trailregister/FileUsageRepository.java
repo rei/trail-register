@@ -124,7 +124,7 @@ public class FileUsageRepository implements UsageRepository {
         
         LocalDate now = LocalDate.now();
         return new TreeMap<>(IntStream.range(0, days)
-                                      .mapToObj(delta -> now.minusDays(delta))
+                                      .mapToObj(now::minusDays)
                                       .collect(toMap(BASIC_ISO_DATE::format, 
                                                      date -> getUsages(key.getApp(), key.getEnv(), key.getCategory(),
                                                                        key.getKey(), date, compactedData))));
@@ -243,7 +243,7 @@ public class FileUsageRepository implements UsageRepository {
     }
     
     private void withLock(Path p, Consumer<Path> work) {
-        withLock(f -> work.accept(f)).accept(p);
+        withLock(work::accept).accept(p);
     }
     
     private void withLock(Lock lock, Runnable work) {
