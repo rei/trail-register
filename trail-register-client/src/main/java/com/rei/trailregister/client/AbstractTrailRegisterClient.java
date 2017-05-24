@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,8 @@ abstract class AbstractTrailRegisterClient implements TrailRegisterClient {
 
     AbstractTrailRegisterClient(String baseUrl) {
         this.baseUrl = baseUrl;
+        client.setConnectTimeout(300, TimeUnit.MILLISECONDS);
+        client.setReadTimeout(10, TimeUnit.SECONDS);
     }
 
     @Override
