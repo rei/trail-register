@@ -94,7 +94,7 @@
 						<configuration>
 							<imageName>reicoop/trail-register</imageName>
 							<baseImage>openjdk:8-jre-alpine</baseImage>
-							<cmd>java -Xmx512m -jar trail-register.jar</cmd>
+							<cmd>java -Xmx1024m -jar trail-register.jar</cmd>
 							<env>
 								<DATA_DIR>/data</DATA_DIR>
 							</env>
