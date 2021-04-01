@@ -109,13 +109,13 @@ public class FileUsageRepository implements UsageRepository {
             if (!Files.exists(path)) {
                 return Collections.emptyList();
             }
-            Stream<Path> stream = Files.list(path);
-            List<String> result = stream.filter(Files::isDirectory)
-                    .map(Path::getFileName)
-                    .map(Path::toString)
-                    .collect(Collectors.toList());
-            stream.close();
-            return result;
+            try (Stream<Path> stream = Files.list(path)) {
+                return stream.filter(Files::isDirectory)
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .collect(Collectors.toList());
+
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -190,10 +190,9 @@ public class FileUsageRepository implements UsageRepository {
     }
 
     private List<Path> getDateFiles(String app, String env, String category, String key) throws IOException {
-        Stream<Path> stream = Files.list(Paths.get(basedir.toString(), app, env, category, key));
-        List<Path> result = stream.filter(p -> !p.getFileName().toString().equals(COMPACTED_FILE)).collect(toList());
-        stream.close();
-        return result;
+        try (Stream<Path> stream = Files.list(Paths.get(basedir.toString(), app, env, category, key))) {
+            return stream.filter(p -> !p.getFileName().toString().equals(COMPACTED_FILE)).collect(toList());
+        }
     }
 
     private Map<String, Integer> readCompactedFile(String app, String env, String category, String key) {
